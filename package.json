@@ -1,0 +1,19 @@
+{
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.2.4",
+    "express": "^5.2.1",
+    "openai": "^6.20.0"
+  },
+  "name": "semiconductor-yield-platform",
+  "version": "1.0.0",
+  "description": "**Two AIs working together + Neural Network pattern recognition**",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module"
+}
