@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semiconductor Yield Intelligence - AI + ML Platform</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon">🪩🧠</div>
+            <span>WaferIQ</span>
+        </div>
+        <div class="ai-badge">
+            <div class="pulse"></div>
+            <span>Local LLM + ML Powered (LLaMA 3 + TensorFlow.js)
+</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="section-title">
+                Fab Setup
+                <span class="tooltip-icon" data-tooltip="Configure production line and wafer specifications">?</span>
+            </div>
+
+            <div class="control-group">
+                <label for="productionLine">
+                    Production Line
+                    <span class="tooltip-icon" data-tooltip="N3=3nm, N5=5nm, N7=7nm, N10=10nm. Smaller numbers mean more advanced transistor density and tighter process tolerances.">?</span>
+                </label>
+                <select id="productionLine">
+                    <option value="N3">N3 Node (3nm)</option>
+                    <option value="N5">N5 Node (5nm)</option>
+                    <option value="N7">N7 Node (7nm)</option>
+                    <option value="N10">N10 Node (10nm)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="waferDiameter">Wafer Diameter</label>
+                <select id="waferDiameter">
+                    <option value="200">200mm (8 inch)</option>
+                    <option value="300" selected>300mm (12 inch)</option>
+                    <option value="450">450mm (18 inch)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="dieSize">Die Size (mm²)</label>
+                <input type="number" id="dieSize" value="100" min="10" max="1000">
+                <div class="slider-container">
+                    <input type="range" id="dieSizeSlider" min="10" max="1000" value="100">
+                    <span class="slider-value" id="dieSizeValue">100 mm²</span>
+                </div>
+            </div>
+
+            <button class="btn-primary" id="startRun">
+                <span>🚀</span>
+                <span>START PRODUCTION RUN</span>
+            </button>
+
+            <div class="training-info">
+                <div class="info-badge">
+                    <strong>🧠 ML Training:</strong> 1,000,000 synthetic scenarios
+                </div>
+                <div class="info-badge">
+                    <strong>🎯 Pattern Accuracy:</strong> 95%+
+                </div>
+                <div class="info-badge">
+                    <strong>Local LLM Backend (RTX 4070)
+</strong>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="card">
+                <h2 class="card-title">Wafer Map</h2>
+                <div class="wafer-container">
+                    <canvas id="waferCanvas" width="600" height="600"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">Production Financials</h2>
+
+                <div class="diagnosis-section">
+                    <div class="diagnosis-header">
+                        <h3 class="diagnosis-title">AI Diagnosis</h3>
+                        <span class="diagnosis-badge" id="diagnosisBadge" style="background: rgba(139,146,168,0.2); color: var(--text-secondary);">
+                            Awaiting Production Run
+                        </span>
+                    </div>
+                    
+                    <div class="confidence-meter">
+                        <div class="confidence-label">
+                            <span>AI Confidence</span>
+                            <span id="confidenceValue">--</span>
+                        </div>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" id="confidenceFill" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div id="rootCauseContainer">
+                        <strong style="font-size: 0.875rem; color: var(--text-secondary);">ROOT CAUSE ANALYSIS:</strong>
+                        <ul class="root-cause-list" id="rootCauseList">
+                            <li class="root-cause-item">Run a production cycle to generate AI analysis.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3 style="font-size: 1rem; margin-bottom: 1rem; color: var(--text-secondary);">
+                    Revenue Breakdown
+                </h3>
+
+                <table class="revenue-table">
+                    <thead>
+                        <tr>
+                            <th>Tier</th>
+                            <th style="text-align: right;">Count</th>
+                            <th style="text-align: right;">Price/Unit</th>
+                            <th style="text-align: right;">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="revenueTableBody">
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: var(--text-secondary);">
+                                Execute production run to calculate financial output
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="financial-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">Gross Revenue</div>
+                        <div class="metric-value" id="grossRevenue">$0</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Total Costs</div>
+                        <div class="metric-value negative" id="totalCosts">$0</div>
+                        <div class="cost-breakdown-popup" id="costBreakdownPopup"></div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Net Profit</div>
+                        <div class="metric-value positive" id="netProfit">$0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card full-width" id="aiAnalysisCard" style="display: none;">
+                <h2 class="card-title">Manufacturing Intelligence Report
+</h2>
+                <div id="detailedAnalysis"></div>
+            </div>
+        </main>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <div style="font-size: 1.125rem; margin-bottom: 0.5rem;" id="loadingText">
+                Processing...
+            </div>
+            <div style="font-size: 0.875rem; color: var(--text-secondary);" id="loadingSubtext">
+                Initializing AI systems
+            </div>
+        </div>
+    </div>
+
+    <!-- JS Modules -->
+    <script src="js/config.js"></script>
+    <script src="js/training-data.js"></script>
+    <script src="js/wafer.js"></script>
+    <script src="js/financials.js"></script>
+    <script src="js/ml-pattern-recognition.js"></script>
+    <script src="js/ai-defect-generator.js"></script>
+    <script src="js/ai-defect-analyzer.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
