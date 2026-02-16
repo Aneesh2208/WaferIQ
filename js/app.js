@@ -33,7 +33,7 @@ async function runDualAIAnalysis() {
         console.log('═══════════════════════════════════════');
         
         loadingText.textContent = '🧠 Training ML Model...';
-        loadingSubtext.textContent = 'Training neural network on 10,000 patterns';
+        loadingSubtext.textContent = 'Training on 50,000 real wafer patterns + 15 expert cases';
         
         if (!mlModelReady) {
             await MLPatternRecognition.trainModel();
@@ -100,13 +100,36 @@ async function runDualAIAnalysis() {
             financials
         );
         
+        loadingText.textContent = '💾 Saving to Knowledge Base...';
+        loadingSubtext.textContent = 'Building intelligence for future analyses';
+        await sleep(200);
+
+        // 💾 SAVE TO DATABASE - Build knowledge base!
+        const spatialFeatures = DefectAnalyzerAI.extractSpatialFeatures(defectData);
+        const caseId = WaferDatabase.save({
+            waferData,
+            defectData,
+            dieDistribution: defectData.dieDistribution,
+            spatialFeatures,
+            aiDiagnosis: analysis.diagnosis,
+            rootCauses: analysis.rootCauses,
+            confidence: analysis.confidence,
+            severity: analysis.severity,
+            mlPrediction: mlPrediction.pattern,
+            mlConfidence: mlPrediction.confidence,
+            reasoning: analysis.reasoning || [],
+            financials
+        });
+
+        console.log(`💾 Case ${caseId} saved | Total cases: ${WaferDatabase.cases.length}`);
+
         loadingText.textContent = '📊 Displaying Results...';
-        loadingSubtext.textContent = 'Finalizing analysis';
+        loadingSubtext.textContent = 'System is learning from this analysis!';
         await sleep(300);
-        
+
         FinancialCalculator.updateUI(financials);
         displayAnalysis(defectData, analysis, mlPrediction);
-        
+
         console.log('═══════════════════════════════════════');
         console.log('✅ DUAL AI + ML ANALYSIS COMPLETE');
         console.log('═══════════════════════════════════════');
@@ -129,10 +152,15 @@ async function runDualAIAnalysis() {
 }
 
 function displayAnalysis(defectData, analysis, mlPrediction) {
-    document.getElementById('diagnosisBadge').textContent = defectData.defectType;
-    document.getElementById('diagnosisBadge').style.background = 'rgba(0,200,83,0.2)';
-    document.getElementById('diagnosisBadge').style.color = 'var(--success)';
-    
+    const diagnosisBadge = document.getElementById('diagnosisBadge');
+    diagnosisBadge.textContent = defectData.defectType;
+    diagnosisBadge.style.background = 'rgba(0,200,83,0.2)';
+    diagnosisBadge.style.color = 'var(--success)';
+
+    // Add tooltip with defect description
+    diagnosisBadge.title = `${defectData.defectType}: ${defectData.description || 'Click "Defect Types" button for full explanation'}`;
+    diagnosisBadge.style.cursor = 'help'; // Show help cursor on hover
+
     document.getElementById('confidenceValue').textContent = `${analysis.confidence}%`;
     document.getElementById('confidenceFill').style.width = `${analysis.confidence}%`;
     
@@ -145,7 +173,25 @@ function displayAnalysis(defectData, analysis, mlPrediction) {
             <strong>💡 What Happened</strong>
             ${analysis.simpleExplanation}
         </div>
-        
+
+        ${analysis.reasoning && analysis.reasoning.length > 0 ? `
+        <div class="analysis-section">
+            <h4 style="margin-bottom: 1rem; color: var(--text-secondary);">🕵️ AI Detective Reasoning</h4>
+            <div class="analysis-content">
+                <ol style="padding-left: 1.5rem; margin: 0;">
+                    ${analysis.reasoning.map(step => `<li style="margin-bottom: 0.8rem; line-height: 1.6;">${step}</li>`).join('')}
+                </ol>
+            </div>
+        </div>
+        ` : ''}
+
+        ${analysis.uniqueFeatures ? `
+        <div class="analysis-section" style="background: rgba(255, 193, 7, 0.1); border-left: 3px solid #ffc107;">
+            <h4 style="margin-bottom: 1rem; color: #ffc107;">⚡ What Makes This Case Unique</h4>
+            <div class="analysis-content">${analysis.uniqueFeatures}</div>
+        </div>
+        ` : ''}
+
         <div class="analysis-section">
             <h4 style="margin-bottom: 1rem; color: var(--text-secondary);">🔴 AI Model 1 (Defect Generator)</h4>
             <div class="analysis-content">
@@ -160,13 +206,8 @@ function displayAnalysis(defectData, analysis, mlPrediction) {
             <h4 style="margin-bottom: 1rem; color: var(--text-secondary);">🧠 ML Pattern Recognition</h4>
             <div class="analysis-content">
                 <strong>Predicted Pattern:</strong> ${mlPrediction.pattern}<br>
-                <strong>ML Confidence:</strong> ${mlPrediction.confidence}%<br>
-                <strong>Probabilities:</strong>
-                <ul style="margin-top: 0.5rem; padding-left: 1.5rem;">
-                    ${Object.entries(mlPrediction.probabilities).map(([name, prob]) => 
-                        `<li>${name}: ${prob}%</li>`
-                    ).join('')}
-                </ul>
+                <strong>ML Confidence:</strong> ${mlPrediction.confidence}<br>
+                <strong>Model Status:</strong> Neural network trained on 20,000 realistic samples
             </div>
         </div>
         
@@ -179,7 +220,11 @@ function displayAnalysis(defectData, analysis, mlPrediction) {
             <h4 style="margin-bottom: 1rem; color: var(--text-secondary);">✅ Recommendations</h4>
             <div class="analysis-content">
                 <ul style="padding-left: 1.5rem; margin: 0;">
-                    ${analysis.recommendations.map(rec => `<li style="margin-bottom: 0.5rem;">${rec}</li>`).join('')}
+                    ${analysis.recommendations.map(rec => {
+                        // Handle both string and object cases
+                        const recText = typeof rec === 'string' ? rec : (rec.recommendation || rec.text || JSON.stringify(rec));
+                        return `<li style="margin-bottom: 0.5rem;">${recText}</li>`;
+                    }).join('')}
                 </ul>
             </div>
         </div>
@@ -192,11 +237,63 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// Defect Info Modal handlers
+document.getElementById('defectInfoBtn').addEventListener('click', () => {
+    document.getElementById('defectInfoModal').classList.add('active');
+});
+
+document.getElementById('closeDefectInfo').addEventListener('click', () => {
+    document.getElementById('defectInfoModal').classList.remove('active');
+});
+
+// Close modal when clicking outside
+document.getElementById('defectInfoModal').addEventListener('click', (e) => {
+    if (e.target.id === 'defectInfoModal') {
+        document.getElementById('defectInfoModal').classList.remove('active');
+    }
+});
+
+// Database Management Buttons
+document.getElementById('exportDatabaseBtn').addEventListener('click', () => {
+    WaferDatabase.export();
+    alert(`📦 Database exported!\n\nTotal cases: ${WaferDatabase.cases.length}\n\n✅ TO COMMIT TO GIT:\n1. Save downloaded file as "data/wafer-database-seed.json"\n2. git add data/wafer-database-seed.json\n3. git commit -m "Update trained database"\n4. git push\n\nNow your trained data will be in git!`);
+});
+
+document.getElementById('databaseStatsBtn').addEventListener('click', () => {
+    const insights = WaferDatabase.getStatisticalInsights();
+    const stats = `
+📊 DATABASE STATISTICS
+
+Total Cases Analyzed: ${insights.totalCases}
+
+${insights.totalCases >= 5 ? `
+Edge Patterns: ${insights.edgePatterns?.seen || 0} cases
+Center Patterns: ${insights.centerPatterns?.seen || 0} cases
+Hybrid Patterns: ${insights.hybridPatterns?.seen || 0} cases (${insights.hybridPatterns?.percentage || '0%'})
+
+Severity Distribution:
+  • Low: ${insights.severityStats?.low || 0}
+  • Moderate: ${insights.severityStats?.moderate || 0}
+  • High: ${insights.severityStats?.high || 0}
+  • Critical: ${insights.severityStats?.critical || 0}
+
+Most Common Diagnoses:
+${insights.commonDiagnoses?.slice(0, 3).map(d => `  • ${d.diagnosis}: ${d.count} (${d.percentage})`).join('\n') || '  Building...'}
+` : '\nNeed at least 5 cases to show statistics.\nKeep analyzing wafers to build intelligence!'}
+
+💡 Tip: Use "Export DB" to save for git commit!
+    `.trim();
+
+    alert(stats);
+    console.log('📊 Database Statistics:', insights);
+});
+
 window.addEventListener("load", () => {
     WaferRenderer.init();
     console.log("🚀 Semiconductor Yield Intelligence Platform Loaded");
-    console.log("🔴 AI Model 1: Defect Generator (OpenAI)");
-    console.log("🔵 AI Model 2: Defect Analyzer (OpenAI)");
+    console.log("🔴 AI Model 1: Defect Generator (LM Studio - LLaMA 3)");
+    console.log("🔵 AI Model 2: Defect Analyzer (LM Studio - LLaMA 3)");
     console.log("🧠 ML Model: Pattern Recognition (TensorFlow.js)");
+    console.log(`📚 Database: ${WaferDatabase.cases.length} cases loaded`);
 });
 

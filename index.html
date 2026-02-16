@@ -62,25 +62,42 @@
                 <span>START PRODUCTION RUN</span>
             </button>
 
-            <div class="training-info">
-                <div class="info-badge">
-                    <strong>🧠 ML Training:</strong> 1,000,000 synthetic scenarios
-                </div>
-                <div class="info-badge">
-                    <strong>🎯 Pattern Accuracy:</strong> 95%+
-                </div>
-                <div class="info-badge">
-                    <strong>Local LLM Backend (RTX 4070)
-</strong>
-                </div>
-            </div>
         </aside>
 
         <main class="main-content">
             <div class="card">
-                <h2 class="card-title">Wafer Map</h2>
+                <h2 class="card-title">
+                    Wafer Map
+                    <button class="info-button" id="defectInfoBtn">📘 Defect Types</button>
+                    <button class="info-button" id="exportDatabaseBtn" style="background: rgba(0,123,255,0.1); color: #007bff;">💾 Export DB</button>
+                    <button class="info-button" id="databaseStatsBtn" style="background: rgba(40,167,69,0.1); color: #28a745;">📊 DB Stats</button>
+                </h2>
                 <div class="wafer-container">
                     <canvas id="waferCanvas" width="600" height="600"></canvas>
+                </div>
+
+                <!-- Defect Color Legend -->
+                <div class="color-legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #00ff88;"></div>
+                        <span>Premium (Perfect)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #66d9a6;"></div>
+                        <span>Standard (Good)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ffaa00;"></div>
+                        <span>Economy (Marginal)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ff4444;"></div>
+                        <span>Faulty (Defective)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #aa0000;"></div>
+                        <span>Dead (Failed)</span>
+                    </div>
                 </div>
             </div>
 
@@ -172,9 +189,93 @@
         </div>
     </div>
 
+    <!-- Defect Information Modal -->
+    <div class="defect-info-modal" id="defectInfoModal">
+        <div class="defect-info-content">
+            <div class="defect-info-header">
+                <h2>📘 Defect Type Reference</h2>
+                <button class="close-btn" id="closeDefectInfo">✕</button>
+            </div>
+            <div class="defect-info-body">
+                <div class="defect-category">
+                    <h3>🔴 Common Manufacturing Defects</h3>
+                    <div class="defect-item">
+                        <strong>Edge Die Failure:</strong> Dies at wafer edges fail due to stress, thermal gradients, or handling damage during processing.
+                    </div>
+                    <div class="defect-item">
+                        <strong>Center Particle Contamination:</strong> Particles deposited in center region during spin coating or deposition processes.
+                    </div>
+                    <div class="defect-item">
+                        <strong>Radial Pattern Defect:</strong> Spoke-like defect pattern caused by tool rotation asymmetry or gas flow irregularities.
+                    </div>
+                    <div class="defect-item">
+                        <strong>Random Defect Scatter:</strong> Randomly distributed particles, contamination, or micro-defects across the wafer.
+                    </div>
+                    <div class="defect-item">
+                        <strong>Cluster Failure:</strong> Localized defect cluster from equipment malfunction or contamination event.
+                    </div>
+                    <div class="defect-item">
+                        <strong>Scratch Pattern:</strong> Physical damage from wafer handling, robotics, or cassette contact.
+                    </div>
+                </div>
+
+                <div class="defect-category">
+                    <h3>⚡ Process-Specific Defects</h3>
+                    <div class="defect-item">
+                        <strong>Wafer Bow Distortion:</strong> Wafer warping from thermal stress or film stress mismatch, affects edge dies.
+                    </div>
+                    <div class="defect-item">
+                        <strong>Etch Non-Uniformity:</strong> Uneven etching across wafer due to gas flow, plasma distribution, or chemistry variation.
+                    </div>
+                    <div class="defect-item">
+                        <strong>Ion Implantation Drift:</strong> Beam drift or dose non-uniformity during ion implantation process.
+                    </div>
+                    <div class="defect-item">
+                        <strong>Lithography Misalignment:</strong> Pattern misalignment from stepper/scanner focus, leveling, or overlay errors.
+                    </div>
+                    <div class="defect-item">
+                        <strong>Chemical Vapor Deposition Defect:</strong> Non-uniform film deposition from temperature, pressure, or gas flow variations.
+                    </div>
+                    <div class="defect-item">
+                        <strong>Metal Layer Delamination:</strong> Metal film peeling due to poor adhesion, stress, or thermal cycling.
+                    </div>
+                    <div class="defect-item">
+                        <strong>Plasma Damage:</strong> Electrical damage from plasma charging during dry etch or deposition processes.
+                    </div>
+                    <div class="defect-item">
+                        <strong>Photoresist Residue:</strong> Incomplete photoresist stripping leaving contamination patterns.
+                    </div>
+                </div>
+
+                <div class="defect-category">
+                    <h3>💥 Critical Failure Modes</h3>
+                    <div class="defect-item">
+                        <strong>Micro-crack Propagation:</strong> Hairline fractures spreading from stress concentration points.
+                    </div>
+                    <div class="defect-item">
+                        <strong>Thermal Stress Fracture:</strong> CATASTROPHIC - Severe thermal shock causing widespread wafer cracking.
+                    </div>
+                    <div class="defect-item">
+                        <strong>Cross-Contamination:</strong> Contamination transfer between process tools or wafer lots.
+                    </div>
+                    <div class="defect-item">
+                        <strong>Incomplete Oxide Formation:</strong> Patchy oxide growth from temperature non-uniformity or contaminated surfaces.
+                    </div>
+                    <div class="defect-item">
+                        <strong>Step Coverage Failure:</strong> Poor film coverage over topography features, common at edges and vias.
+                    </div>
+                    <div class="defect-item">
+                        <strong>Polysilicon Grain Boundaries:</strong> Crystal defects in polysilicon layers affecting electrical properties.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- JS Modules -->
     <script src="js/config.js"></script>
     <script src="js/training-data.js"></script>
+    <script src="js/wafer-database.js"></script>
     <script src="js/wafer.js"></script>
     <script src="js/financials.js"></script>
     <script src="js/ml-pattern-recognition.js"></script>

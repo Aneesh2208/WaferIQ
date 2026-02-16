@@ -10,7 +10,8 @@
   "description": "**Two AIs working together + Neural Network pattern recognition**",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node server.js"
   },
   "keywords": [],
   "author": "",

@@ -1,0 +1,738 @@
+[
+  {
+    "id": "WF-SEED-001",
+    "timestamp": "2024-12-20T10:00:00.000Z",
+    "waferData": {
+      "waferDiameter": 300,
+      "dieSize": 100,
+      "productionLine": "N5",
+      "totalDies": 1000
+    },
+    "defectData": {
+      "defectType": "Edge Die Failure",
+      "severity": "high",
+      "region": "edge",
+      "description": "Temperature control system malfunction caused uneven cooling at wafer edges",
+      "spatialPattern": "Failures concentrated at outer 20% radius",
+      "dieDistribution": {
+        "premium": 600,
+        "standard": 150,
+        "economy": 50,
+        "faulty": 100,
+        "dead": 100
+      }
+    },
+    "spatialFeatures": {
+      "failureRate": 0.20,
+      "deadRatio": 0.50,
+      "edgeConcentration": 0.85,
+      "centerConcentration": 0.05,
+      "clusterDetected": false,
+      "premiumRatio": 0.60,
+      "severity": "high",
+      "region": "edge"
+    },
+    "aiDiagnosis": "Edge Die Failure caused by thermal stress during cooling phase",
+    "rootCauses": [
+      "Temperature control system drift affecting edge cooling rates",
+      "Inadequate thermal management at wafer periphery",
+      "Possible chuck temperature non-uniformity"
+    ],
+    "confidence": 92,
+    "severity": "high",
+    "reasoning": [
+      "Observed 85% of defects concentrated at edges (>0.8 radius)",
+      "Center region shows normal yield (60% premium)",
+      "Radial gradient pattern suggests thermal origin",
+      "High dead ratio (50%) indicates severe stress",
+      "Pattern matches thermal stress signature from equipment physics"
+    ]
+  },
+  {
+    "id": "WF-SEED-002",
+    "timestamp": "2024-12-20T11:00:00.000Z",
+    "waferData": {
+      "waferDiameter": 300,
+      "dieSize": 150,
+      "productionLine": "N3",
+      "totalDies": 800
+    },
+    "defectData": {
+      "defectType": "Center Particle Contamination",
+      "severity": "moderate",
+      "region": "center",
+      "description": "Particle deposition during spin coating concentrated in center region",
+      "spatialPattern": "Defect cluster in central 30% of wafer",
+      "dieDistribution": {
+        "premium": 500,
+        "standard": 180,
+        "economy": 60,
+        "faulty": 40,
+        "dead": 20
+      }
+    },
+    "spatialFeatures": {
+      "failureRate": 0.075,
+      "deadRatio": 0.33,
+      "edgeConcentration": 0.10,
+      "centerConcentration": 0.75,
+      "clusterDetected": true,
+      "premiumRatio": 0.625,
+      "severity": "moderate",
+      "region": "center"
+    },
+    "aiDiagnosis": "Center particle contamination from spin coating process",
+    "rootCauses": [
+      "Particle contamination in spin coating chemicals",
+      "Insufficient cleanroom air filtration",
+      "Spin coater nozzle contamination"
+    ],
+    "confidence": 88,
+    "severity": "moderate",
+    "reasoning": [
+      "75% of defects in center region (<0.3 radius)",
+      "Cluster detected at wafer center",
+      "Low overall failure rate (7.5%) suggests localized issue",
+      "Edge quality is normal, ruling out equipment-wide problem",
+      "Pattern consistent with particle deposition during spin process"
+    ]
+  },
+  {
+    "id": "WF-SEED-003",
+    "timestamp": "2024-12-20T12:00:00.000Z",
+    "waferData": {
+      "waferDiameter": 450,
+      "dieSize": 80,
+      "productionLine": "N7",
+      "totalDies": 2000
+    },
+    "defectData": {
+      "defectType": "Perfect Run",
+      "severity": "low",
+      "region": "none",
+      "description": "Optimal process conditions maintained throughout manufacturing",
+      "spatialPattern": "Minimal scattered defects, excellent uniformity",
+      "dieDistribution": {
+        "premium": 1700,
+        "standard": 250,
+        "economy": 30,
+        "faulty": 15,
+        "dead": 5
+      }
+    },
+    "spatialFeatures": {
+      "failureRate": 0.01,
+      "deadRatio": 0.25,
+      "edgeConcentration": 0.20,
+      "centerConcentration": 0.20,
+      "clusterDetected": false,
+      "premiumRatio": 0.85,
+      "severity": "low",
+      "region": "none"
+    },
+    "aiDiagnosis": "Near-perfect manufacturing run with optimal process control",
+    "rootCauses": [
+      "All process parameters within specification",
+      "Excellent cleanroom conditions",
+      "Equipment performing optimally"
+    ],
+    "confidence": 95,
+    "severity": "low",
+    "reasoning": [
+      "Extremely low failure rate (1%)",
+      "High premium ratio (85%)",
+      "Uniform defect distribution (no concentration)",
+      "No clusters detected",
+      "All indicators show optimal manufacturing conditions"
+    ]
+  },
+  {
+    "id": "WF-SEED-004",
+    "timestamp": "2024-12-20T13:00:00.000Z",
+    "waferData": {
+      "waferDiameter": 300,
+      "dieSize": 120,
+      "productionLine": "N5",
+      "totalDies": 900
+    },
+    "defectData": {
+      "defectType": "Thermal Stress Fracture",
+      "severity": "critical",
+      "region": "random",
+      "description": "Catastrophic thermal shock during rapid temperature transition",
+      "spatialPattern": "Widespread damage across entire wafer",
+      "dieDistribution": {
+        "premium": 150,
+        "standard": 100,
+        "economy": 100,
+        "faulty": 250,
+        "dead": 300
+      }
+    },
+    "spatialFeatures": {
+      "failureRate": 0.61,
+      "deadRatio": 0.545,
+      "edgeConcentration": 0.30,
+      "centerConcentration": 0.30,
+      "clusterDetected": false,
+      "premiumRatio": 0.167,
+      "severity": "critical",
+      "region": "random"
+    },
+    "aiDiagnosis": "Catastrophic thermal stress fracture from temperature shock",
+    "rootCauses": [
+      "Rapid temperature change exceeded material stress limits",
+      "Thermal ramp rate not properly controlled",
+      "Possible equipment malfunction in heating/cooling system"
+    ],
+    "confidence": 94,
+    "severity": "critical",
+    "reasoning": [
+      "Extremely high failure rate (61%)",
+      "Uniform distribution across wafer (not localized)",
+      "High dead ratio indicates catastrophic damage",
+      "Very low premium ratio (16.7%)",
+      "Pattern matches thermal shock signature"
+    ]
+  },
+  {
+    "id": "WF-SEED-005",
+    "timestamp": "2024-12-20T14:00:00.000Z",
+    "waferData": {
+      "waferDiameter": 300,
+      "dieSize": 100,
+      "productionLine": "N7",
+      "totalDies": 1000
+    },
+    "defectData": {
+      "defectType": "Cluster Failure",
+      "severity": "moderate",
+      "region": "cluster",
+      "description": "Localized contamination event in NE quadrant during processing",
+      "spatialPattern": "Tight cluster of failures in upper-right region",
+      "dieDistribution": {
+        "premium": 700,
+        "standard": 150,
+        "economy": 50,
+        "faulty": 60,
+        "dead": 40
+      }
+    },
+    "spatialFeatures": {
+      "failureRate": 0.10,
+      "deadRatio": 0.40,
+      "edgeConcentration": 0.25,
+      "centerConcentration": 0.15,
+      "clusterDetected": true,
+      "premiumRatio": 0.70,
+      "severity": "moderate",
+      "region": "cluster"
+    },
+    "aiDiagnosis": "Localized cluster failure from contamination event in NE quadrant",
+    "rootCauses": [
+      "Particle or chemical contamination in specific location",
+      "Robot arm malfunction deposited contaminant",
+      "Localized equipment issue during processing"
+    ],
+    "confidence": 90,
+    "severity": "moderate",
+    "reasoning": [
+      "Cluster detected in specific region (NE quadrant)",
+      "Rest of wafer shows good yield (70% premium)",
+      "Localized pattern rules out process-wide issues",
+      "Moderate failure rate (10%) confined to one area",
+      "Spatial signature matches contamination event"
+    ]
+  },
+  {
+    "id": "WF-SEED-006",
+    "timestamp": "2024-12-20T15:00:00.000Z",
+    "waferData": {
+      "waferDiameter": 300,
+      "dieSize": 100,
+      "productionLine": "N5",
+      "totalDies": 1000
+    },
+    "defectData": {
+      "defectType": "Random Defect Scatter",
+      "severity": "moderate",
+      "region": "random",
+      "description": "Multiple small contamination particles distributed randomly",
+      "spatialPattern": "Defects scattered uniformly with no concentration",
+      "dieDistribution": {
+        "premium": 600,
+        "standard": 200,
+        "economy": 100,
+        "faulty": 70,
+        "dead": 30
+      }
+    },
+    "spatialFeatures": {
+      "failureRate": 0.10,
+      "deadRatio": 0.30,
+      "edgeConcentration": 0.33,
+      "centerConcentration": 0.33,
+      "clusterDetected": false,
+      "premiumRatio": 0.60,
+      "severity": "moderate",
+      "region": "random"
+    },
+    "aiDiagnosis": "Random particle scatter from ambient contamination",
+    "rootCauses": [
+      "Cleanroom air quality below specification",
+      "Multiple small particle sources",
+      "Personnel or equipment shedding particles"
+    ],
+    "confidence": 85,
+    "severity": "moderate",
+    "reasoning": [
+      "Uniform distribution (edge and center similar)",
+      "No clusters detected",
+      "Moderate failure rate (10%) spread across wafer",
+      "Multiple small defects rather than concentrated failures",
+      "Pattern consistent with airborne particle contamination"
+    ]
+  },
+  {
+    "id": "WF-SEED-007",
+    "timestamp": "2024-12-20T16:00:00.000Z",
+    "waferData": {
+      "waferDiameter": 300,
+      "dieSize": 100,
+      "productionLine": "N3",
+      "totalDies": 1000
+    },
+    "defectData": {
+      "defectType": "Edge Die Failure + Cluster Failure",
+      "severity": "high",
+      "region": "edge",
+      "description": "Multi-stage failure: initial thermal stress at edges followed by contamination cluster",
+      "spatialPattern": "High edge concentration PLUS cluster in SW quadrant",
+      "dieDistribution": {
+        "premium": 450,
+        "standard": 150,
+        "economy": 100,
+        "faulty": 150,
+        "dead": 150
+      }
+    },
+    "spatialFeatures": {
+      "failureRate": 0.30,
+      "deadRatio": 0.50,
+      "edgeConcentration": 0.65,
+      "centerConcentration": 0.10,
+      "clusterDetected": true,
+      "premiumRatio": 0.45,
+      "severity": "high",
+      "region": "edge"
+    },
+    "aiDiagnosis": "Hybrid defect: thermal edge stress combined with contamination cluster",
+    "rootCauses": [
+      "Primary: Edge thermal stress from cooling issues",
+      "Secondary: Contamination event created additional cluster",
+      "Multi-stage failure sequence over processing time"
+    ],
+    "confidence": 87,
+    "severity": "high",
+    "reasoning": [
+      "UNIQUE: Both high edge concentration (65%) AND cluster detected",
+      "This differs from pure edge failures (no cluster)",
+      "Also differs from pure clusters (edge effect present)",
+      "Suggests timeline: thermal stress first, then contamination",
+      "Hybrid pattern indicates two separate failure mechanisms"
+    ],
+    "uniqueFeatures": "This is a rare hybrid pattern showing BOTH edge thermal stress signature AND a localized contamination cluster. Unlike pure edge failures, there's a secondary cluster in SW quadrant. This suggests a sequence of events rather than a single root cause."
+  },
+  {
+    "id": "WF-SEED-008",
+    "timestamp": "2024-12-20T17:00:00.000Z",
+    "waferData": {
+      "waferDiameter": 300,
+      "dieSize": 120,
+      "productionLine": "N7",
+      "totalDies": 900
+    },
+    "defectData": {
+      "defectType": "Wafer Bow Distortion",
+      "severity": "moderate",
+      "region": "edge",
+      "description": "Wafer warping caused gradual yield degradation from center to edge",
+      "spatialPattern": "Gradual degradation with distance from center",
+      "dieDistribution": {
+        "premium": 550,
+        "standard": 200,
+        "economy": 80,
+        "faulty": 50,
+        "dead": 20
+      }
+    },
+    "spatialFeatures": {
+      "failureRate": 0.078,
+      "deadRatio": 0.286,
+      "edgeConcentration": 0.60,
+      "centerConcentration": 0.10,
+      "clusterDetected": false,
+      "premiumRatio": 0.611,
+      "severity": "moderate",
+      "region": "edge"
+    },
+    "aiDiagnosis": "Wafer bow distortion creating gradual edge degradation",
+    "rootCauses": [
+      "Film stress mismatch causing wafer warping",
+      "Thermal expansion coefficient differences",
+      "Chuck flatness or clamping issues"
+    ],
+    "confidence": 86,
+    "severity": "moderate",
+    "reasoning": [
+      "Gradual edge degradation (60% edge concentration)",
+      "Much lower failure rate than thermal stress (7.8% vs 60%+)",
+      "Center quality good (61% premium)",
+      "Pattern shows progressive degradation, not sharp transition",
+      "Characteristic of mechanical bow rather than thermal shock"
+    ]
+  },
+  {
+    "id": "WF-SEED-009",
+    "timestamp": "2024-12-20T18:00:00.000Z",
+    "waferData": {
+      "waferDiameter": 450,
+      "dieSize": 100,
+      "productionLine": "N5",
+      "totalDies": 1800
+    },
+    "defectData": {
+      "defectType": "Ion Implantation Drift",
+      "severity": "moderate",
+      "region": "edge",
+      "description": "Ion beam gradually drifted from left to right during implantation",
+      "spatialPattern": "Left side normal, progressive degradation toward right edge",
+      "dieDistribution": {
+        "premium": 1100,
+        "standard": 400,
+        "economy": 150,
+        "faulty": 100,
+        "dead": 50
+      }
+    },
+    "spatialFeatures": {
+      "failureRate": 0.083,
+      "deadRatio": 0.333,
+      "edgeConcentration": 0.55,
+      "centerConcentration": 0.15,
+      "clusterDetected": false,
+      "premiumRatio": 0.611,
+      "severity": "moderate",
+      "region": "edge"
+    },
+    "aiDiagnosis": "Ion implantation beam drift causing lateral dose gradient",
+    "rootCauses": [
+      "Ion implanter beam alignment drift",
+      "Magnetic field instability",
+      "Stage positioning drift during implant"
+    ],
+    "confidence": 84,
+    "severity": "moderate",
+    "reasoning": [
+      "Left-right asymmetry in defect distribution",
+      "Progressive gradient pattern, not uniform",
+      "Moderate failure rate (8.3%)",
+      "Spatial pattern matches beam drift physics",
+      "Different from thermal or contamination patterns"
+    ]
+  },
+  {
+    "id": "WF-SEED-010",
+    "timestamp": "2024-12-20T19:00:00.000Z",
+    "waferData": {
+      "waferDiameter": 300,
+      "dieSize": 100,
+      "productionLine": "N7",
+      "totalDies": 1000
+    },
+    "defectData": {
+      "defectType": "Etch Non-Uniformity",
+      "severity": "moderate",
+      "region": "radial",
+      "description": "Plasma etch rate varied in concentric rings across wafer",
+      "spatialPattern": "Ring pattern with alternating good and degraded zones",
+      "dieDistribution": {
+        "premium": 600,
+        "standard": 220,
+        "economy": 100,
+        "faulty": 60,
+        "dead": 20
+      }
+    },
+    "spatialFeatures": {
+      "failureRate": 0.08,
+      "deadRatio": 0.25,
+      "edgeConcentration": 0.40,
+      "centerConcentration": 0.35,
+      "clusterDetected": false,
+      "premiumRatio": 0.60,
+      "severity": "moderate",
+      "region": "radial"
+    },
+    "aiDiagnosis": "Etch non-uniformity from plasma distribution variations",
+    "rootCauses": [
+      "Non-uniform plasma density in etch chamber",
+      "Gas flow pattern creating radial variations",
+      "RF power distribution non-uniformity"
+    ],
+    "confidence": 88,
+    "severity": "moderate",
+    "reasoning": [
+      "Radial pattern suggests chamber-level effect",
+      "Both edge and center affected (40% and 35%)",
+      "Moderate failure rate distributed in rings",
+      "Pattern characteristic of plasma etch process",
+      "Different from purely edge or center concentrated defects"
+    ]
+  },
+  {
+    "id": "WF-SEED-011",
+    "timestamp": "2024-12-21T09:00:00.000Z",
+    "waferData": {
+      "waferDiameter": 300,
+      "dieSize": 150,
+      "productionLine": "N5",
+      "totalDies": 800
+    },
+    "defectData": {
+      "defectType": "Chemical Vapor Deposition Defect",
+      "severity": "moderate",
+      "region": "center",
+      "description": "CVD film thickness variation highest at wafer center",
+      "spatialPattern": "Center region has thicker film causing yield loss",
+      "dieDistribution": {
+        "premium": 500,
+        "standard": 180,
+        "economy": 70,
+        "faulty": 35,
+        "dead": 15
+      }
+    },
+    "spatialFeatures": {
+      "failureRate": 0.0625,
+      "deadRatio": 0.30,
+      "edgeConcentration": 0.15,
+      "centerConcentration": 0.70,
+      "clusterDetected": false,
+      "premiumRatio": 0.625,
+      "severity": "moderate",
+      "region": "center"
+    },
+    "aiDiagnosis": "CVD film thickness non-uniformity concentrated at center",
+    "rootCauses": [
+      "CVD gas flow pattern favoring center deposition",
+      "Temperature gradient in CVD chamber",
+      "Precursor concentration higher at center"
+    ],
+    "confidence": 89,
+    "severity": "moderate",
+    "reasoning": [
+      "High center concentration (70%) of defects",
+      "Low overall failure rate (6.25%)",
+      "Edge quality much better than center",
+      "Pattern matches CVD deposition physics",
+      "Gradual radial gradient characteristic of CVD process"
+    ]
+  },
+  {
+    "id": "WF-SEED-012",
+    "timestamp": "2024-12-21T10:00:00.000Z",
+    "waferData": {
+      "waferDiameter": 300,
+      "dieSize": 100,
+      "productionLine": "N3",
+      "totalDies": 1000
+    },
+    "defectData": {
+      "defectType": "Scratch Pattern",
+      "severity": "high",
+      "region": "linear",
+      "description": "Physical scratch from wafer handling created diagonal line of failures",
+      "spatialPattern": "Linear diagonal pattern of dead dies from NW to SE",
+      "dieDistribution": {
+        "premium": 650,
+        "standard": 180,
+        "economy": 50,
+        "faulty": 70,
+        "dead": 50
+      }
+    },
+    "spatialFeatures": {
+      "failureRate": 0.12,
+      "deadRatio": 0.417,
+      "edgeConcentration": 0.35,
+      "centerConcentration": 0.30,
+      "clusterDetected": false,
+      "premiumRatio": 0.65,
+      "severity": "high",
+      "region": "linear"
+    },
+    "aiDiagnosis": "Physical scratch damage from handling or robot contact",
+    "rootCauses": [
+      "Wafer handling robot misalignment",
+      "Cassette contact during loading",
+      "Operator handling error"
+    ],
+    "confidence": 93,
+    "severity": "high",
+    "reasoning": [
+      "Linear diagonal pattern is distinctive signature",
+      "High dead ratio (41.7%) indicates physical damage",
+      "Pattern crosses both edge and center regions",
+      "Not related to process equipment",
+      "Mechanical damage characteristic, not chemical or thermal"
+    ]
+  },
+  {
+    "id": "WF-SEED-013",
+    "timestamp": "2024-12-21T11:00:00.000Z",
+    "waferData": {
+      "waferDiameter": 300,
+      "dieSize": 100,
+      "productionLine": "N7",
+      "totalDies": 1000
+    },
+    "defectData": {
+      "defectType": "Radial Pattern Defect",
+      "severity": "moderate",
+      "region": "radial",
+      "description": "Spoke-like defect pattern radiating from center in 6 directions",
+      "spatialPattern": "Six radial spokes of increased defect density",
+      "dieDistribution": {
+        "premium": 620,
+        "standard": 210,
+        "economy": 90,
+        "faulty": 60,
+        "dead": 20
+      }
+    },
+    "spatialFeatures": {
+      "failureRate": 0.08,
+      "deadRatio": 0.25,
+      "edgeConcentration": 0.35,
+      "centerConcentration": 0.25,
+      "clusterDetected": false,
+      "premiumRatio": 0.62,
+      "severity": "moderate",
+      "region": "radial"
+    },
+    "aiDiagnosis": "Radial pattern defect from rotating equipment asymmetry",
+    "rootCauses": [
+      "Spin coater rotation asymmetry",
+      "Gas flow pattern in rotating chamber",
+      "Six-fold plasma asymmetry"
+    ],
+    "confidence": 87,
+    "severity": "moderate",
+    "reasoning": [
+      "Distinctive radial spoke pattern",
+      "Angular symmetry suggests rotating equipment",
+      "Moderate failure rate (8%)",
+      "Pattern affects both center and edges",
+      "Six-fold symmetry matches equipment geometry"
+    ]
+  },
+  {
+    "id": "WF-SEED-014",
+    "timestamp": "2024-12-21T12:00:00.000Z",
+    "waferData": {
+      "waferDiameter": 300,
+      "dieSize": 100,
+      "productionLine": "N5",
+      "totalDies": 1000
+    },
+    "defectData": {
+      "defectType": "Step Coverage Failure",
+      "severity": "high",
+      "region": "edge",
+      "description": "Metal deposition failed to adequately cover step features at edges",
+      "spatialPattern": "Edge region with highest topography has worst coverage",
+      "dieDistribution": {
+        "premium": 500,
+        "standard": 200,
+        "economy": 100,
+        "faulty": 120,
+        "dead": 80
+      }
+    },
+    "spatialFeatures": {
+      "failureRate": 0.20,
+      "deadRatio": 0.40,
+      "edgeConcentration": 0.75,
+      "centerConcentration": 0.10,
+      "clusterDetected": false,
+      "premiumRatio": 0.50,
+      "severity": "high",
+      "region": "edge"
+    },
+    "aiDiagnosis": "Step coverage failure in metallization at wafer edges",
+    "rootCauses": [
+      "Deposition angle too steep for edge topography",
+      "Insufficient precursor flux at edges",
+      "Plasma density lower at wafer periphery"
+    ],
+    "confidence": 91,
+    "severity": "high",
+    "reasoning": [
+      "High edge concentration (75%) of failures",
+      "Elevated failure rate (20%)",
+      "Pattern characteristic of deposition uniformity issues",
+      "Edge topography more challenging than center",
+      "Matches step coverage physics"
+    ]
+  },
+  {
+    "id": "WF-SEED-015",
+    "timestamp": "2024-12-21T13:00:00.000Z",
+    "waferData": {
+      "waferDiameter": 300,
+      "dieSize": 100,
+      "productionLine": "N7",
+      "totalDies": 1000
+    },
+    "defectData": {
+      "defectType": "Lithography Misalignment",
+      "severity": "moderate",
+      "region": "random",
+      "description": "Alignment errors during photolithography step caused pattern shifts",
+      "spatialPattern": "Grid-like pattern of misaligned features",
+      "dieDistribution": {
+        "premium": 600,
+        "standard": 250,
+        "economy": 80,
+        "faulty": 50,
+        "dead": 20
+      }
+    },
+    "spatialFeatures": {
+      "failureRate": 0.07,
+      "deadRatio": 0.286,
+      "edgeConcentration": 0.30,
+      "centerConcentration": 0.30,
+      "clusterDetected": false,
+      "premiumRatio": 0.60,
+      "severity": "moderate",
+      "region": "random"
+    },
+    "aiDiagnosis": "Lithography alignment errors creating systematic pattern shifts",
+    "rootCauses": [
+      "Stepper alignment mark detection errors",
+      "Wafer stage positioning drift",
+      "Previous layer pattern distortion"
+    ],
+    "confidence": 85,
+    "severity": "moderate",
+    "reasoning": [
+      "Uniform distribution suggests systematic issue",
+      "Grid-like pattern characteristic of stepper fields",
+      "Low failure rate (7%) but widespread",
+      "Not concentrated in any region",
+      "Pattern matches lithography tool geometry"
+    ]
+  }
+]
