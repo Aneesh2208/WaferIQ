@@ -69,8 +69,8 @@
                 <h2 class="card-title">
                     Wafer Map
                     <button class="info-button" id="defectInfoBtn">📘 Defect Types</button>
-                    <button class="info-button" id="exportDatabaseBtn" style="background: rgba(0,123,255,0.1); color: #007bff;">💾 Export DB</button>
-                    <button class="info-button" id="databaseStatsBtn" style="background: rgba(40,167,69,0.1); color: #28a745;">📊 DB Stats</button>
+                    <button class="info-button" id="exportDatabaseBtn">💾 Export DB</button>
+                    <button class="info-button" id="databaseStatsBtn">📊 DB Stats</button>
                 </h2>
                 <div class="wafer-container">
                     <canvas id="waferCanvas" width="600" height="600"></canvas>
@@ -165,6 +165,7 @@
                     <div class="metric-card">
                         <div class="metric-label">Net Profit</div>
                         <div class="metric-value positive" id="netProfit">$0</div>
+                        <div class="cost-breakdown-popup" id="profitBreakdownPopup"></div>
                     </div>
                 </div>
             </div>
@@ -268,6 +269,30 @@
                         <strong>Polysilicon Grain Boundaries:</strong> Crystal defects in polysilicon layers affecting electrical properties.
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Database Stats Modal -->
+    <div class="db-stats-modal" id="dbStatsModal">
+        <div class="db-stats-content">
+            <div class="db-stats-header">
+                <h2>Database Intelligence</h2>
+                <button class="close-btn" id="closeDbStats">✕</button>
+            </div>
+            <div class="db-stats-body" id="dbStatsBody">
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Confirmation Modal -->
+    <div class="db-stats-modal" id="exportModal">
+        <div class="db-stats-content" style="max-width: 500px;">
+            <div class="db-stats-header">
+                <h2>Database Exported</h2>
+                <button class="close-btn" id="closeExportModal">✕</button>
+            </div>
+            <div class="db-stats-body" id="exportModalBody">
             </div>
         </div>
     </div>

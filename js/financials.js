@@ -92,7 +92,63 @@ const FinancialCalculator = {
                 <span class="cost-item-value" style="color: var(--error);">$${financials.costs.deadDieLoss.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
             </div>
         `;
+
+        const profitPopup = document.getElementById('profitBreakdownPopup');
+        if (financials.netProfit < 0) {
+            const scrapCount = financials.dieDistribution.faulty + financials.dieDistribution.dead;
+            const lostRevenue = scrapCount * CONFIG.PRICING.standard;
+
+            profitPopup.innerHTML = `
+                <div style="font-weight: 600; margin-bottom: 1rem; color: var(--error);">Loss Breakdown</div>
+                <div class="cost-item">
+                    <span class="cost-item-label">Revenue Earned</span>
+                    <span class="cost-item-value">$${financials.grossRevenue.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                </div>
+                <div class="cost-item">
+                    <span class="cost-item-label">Total Costs</span>
+                    <span class="cost-item-value" style="color: var(--error);">-$${financials.totalCosts.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                </div>
+                <div class="cost-item" style="border-top: 1px solid var(--glass-border); padding-top: 0.75rem;">
+                    <span class="cost-item-label">Net Loss</span>
+                    <span class="cost-item-value" style="color: var(--error); font-weight: 800;">-$${Math.abs(financials.netProfit).toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                </div>
+                <div class="cost-item">
+                    <span class="cost-item-label">Scrapped Dies</span>
+                    <span class="cost-item-value" style="color: var(--error);">${scrapCount} dies</span>
+                </div>
+                <div class="cost-item">
+                    <span class="cost-item-label">Lost Potential Revenue</span>
+                    <span class="cost-item-value" style="color: var(--error);">~$${lostRevenue.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                </div>
+                <div class="cost-item">
+                    <span class="cost-item-label">Dead Die Penalty</span>
+                    <span class="cost-item-value" style="color: var(--error);">$${financials.costs.deadDieLoss.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                </div>
+            `;
+        } else {
+            profitPopup.innerHTML = `
+                <div style="font-weight: 600; margin-bottom: 1rem; color: var(--success);">Profit Summary</div>
+                <div class="cost-item">
+                    <span class="cost-item-label">Revenue</span>
+                    <span class="cost-item-value">$${financials.grossRevenue.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                </div>
+                <div class="cost-item">
+                    <span class="cost-item-label">Costs</span>
+                    <span class="cost-item-value" style="color: var(--error);">-$${financials.totalCosts.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                </div>
+                <div class="cost-item" style="border-top: 1px solid var(--glass-border); padding-top: 0.75rem;">
+                    <span class="cost-item-label">Net Profit</span>
+                    <span class="cost-item-value" style="color: var(--success); font-weight: 800;">$${financials.netProfit.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                </div>
+                <div class="cost-item">
+                    <span class="cost-item-label">Profit Margin</span>
+                    <span class="cost-item-value" style="color: var(--success);">${(financials.netProfit / financials.grossRevenue * 100).toFixed(1)}%</span>
+                </div>
+                <div class="cost-item">
+                    <span class="cost-item-label">Yield</span>
+                    <span class="cost-item-value">${financials.yieldRate}%</span>
+                </div>
+            `;
+        }
     }
 };
-
-console.log('💰 Financial Calculator Loaded');

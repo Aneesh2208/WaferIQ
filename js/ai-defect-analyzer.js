@@ -1,17 +1,16 @@
 const DefectAnalyzerAI = {
     async analyzeDefects(waferData, defectData, financials) {
-        console.log("🔵 AI MODEL 2: Defect Analyzer Starting...");
+        console.log("AI Model 2: Analyzing defects...");
 
-        // 🔍 CROSS-REFERENCE WITH DATABASE
         const spatialFeatures = this.extractSpatialFeatures(defectData);
         const similarCases = WaferDatabase.findSimilar(spatialFeatures, 5);
         const insights = WaferDatabase.getStatisticalInsights();
 
-        console.log(`   📊 Database: ${insights.totalCases} past cases | ${similarCases.length} similar found`);
+        console.log(`  Database: ${insights.totalCases} past cases | ${similarCases.length} similar found`);
 
         const prompt = `You are a DETECTIVE analyzing semiconductor manufacturing defects. Think step-by-step. Don't just pattern match - REASON through the evidence.
 
-=== 🔬 CURRENT WAFER EVIDENCE ===
+=== CURRENT WAFER EVIDENCE ===
 
 PHYSICAL OBSERVATIONS:
 - Wafer: ${waferData.waferDiameter}mm diameter, ${waferData.totalDies} chips total
@@ -41,7 +40,7 @@ FINANCIAL IMPACT:
 - Revenue: $${financials.grossRevenue}
 - Profit: $${financials.netProfit}
 
-=== 📚 YOUR ACCUMULATED KNOWLEDGE (${insights.totalCases} past cases analyzed) ===
+=== YOUR ACCUMULATED KNOWLEDGE (${insights.totalCases} past cases analyzed) ===
 
 ${insights.totalCases >= 5 ? `
 STATISTICAL PATTERNS FROM DATABASE:
@@ -67,7 +66,7 @@ ${insights.commonDiagnoses?.slice(0, 5).map(d => `  - ${d.diagnosis}: ${d.count}
 ` : 'BUILDING KNOWLEDGE BASE... Only ' + insights.totalCases + ' cases so far. Need more data to establish patterns.'}
 
 ${similarCases.length > 0 ? `
-=== 🔍 SIMILAR PAST CASES (Cross-Reference) ===
+=== SIMILAR PAST CASES (Cross-Reference) ===
 
 Found ${similarCases.length} similar cases in database:
 
@@ -85,9 +84,9 @@ CROSS-REFERENCE QUESTIONS TO ASK YOURSELF:
 2. Do the similar cases suggest a common root cause?
 3. Are there any UNIQUE features in this case that weren't in the similar ones?
 4. If the initial label says "${defectData.defectType}", do similar past cases support or contradict this?
-` : '=== 🔍 NO SIMILAR CASES FOUND ===\nThis appears to be a NOVEL pattern not seen before in the database!\nYou must analyze it from first principles.'}
+` : '=== NO SIMILAR CASES FOUND ===\nThis appears to be a NOVEL pattern not seen before in the database!\nYou must analyze it from first principles.'}
 
-=== 🕵️ YOUR DETECTIVE TASK ===
+=== YOUR DETECTIVE TASK ===
 
 You are NOT a simple pattern matcher. You are a DETECTIVE solving a mystery.
 
@@ -189,14 +188,12 @@ Ensure total die count is realistic.
             const data = await response.json();
             return data.result;
 
-
         } catch (error) {
-            console.error("❌ AI MODEL 2 FAILED:", error);
+            console.error("AI Model 2 failed:", error);
             throw error;
         }
     },
 
-    // Extract spatial features from defect data for database comparison
     extractSpatialFeatures(defectData) {
         const total = defectData.dieDistribution.premium +
                      defectData.dieDistribution.standard +
@@ -207,25 +204,18 @@ Ensure total die count is realistic.
         const failureRate = (defectData.dieDistribution.faulty + defectData.dieDistribution.dead) / total;
         const deadRatio = defectData.dieDistribution.dead / (defectData.dieDistribution.faulty + defectData.dieDistribution.dead + 0.001);
 
-        // Infer spatial concentrations from region/pattern description
         const region = (defectData.region || '').toLowerCase();
         const pattern = (defectData.spatialPattern || '').toLowerCase();
-
-        const edgeConcentration = region.includes('edge') || pattern.includes('edge') ? 0.7 : 0.2;
-        const centerConcentration = region.includes('center') || pattern.includes('center') ? 0.7 : 0.2;
-        const clusterDetected = region.includes('cluster') || pattern.includes('cluster');
 
         return {
             failureRate,
             deadRatio,
-            edgeConcentration,
-            centerConcentration,
-            clusterDetected,
+            edgeConcentration: region.includes('edge') || pattern.includes('edge') ? 0.7 : 0.2,
+            centerConcentration: region.includes('center') || pattern.includes('center') ? 0.7 : 0.2,
+            clusterDetected: region.includes('cluster') || pattern.includes('cluster'),
             premiumRatio: defectData.dieDistribution.premium / total,
             severity: defectData.severity,
             region: defectData.region
         };
     }
 };
-
-console.log("🔵 AI Model 2 (OpenAI) Loaded");

@@ -16,5 +16,3 @@ const CONFIG = {
         deadDieLoss: 12.50
     }
 };
-
-console.log("⚙️ Config Loaded (Backend API Mode)");

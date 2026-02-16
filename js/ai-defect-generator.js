@@ -1,53 +1,49 @@
 const DefectGeneratorAI = {
     async generateRealisticDefects(waferDiameter, dieSize, productionLine) {
-        console.log("🔴 AI MODEL 1: Defect Generator Starting...");
+        console.log("AI Model 1: Generating defects...");
 
         const totalDies = Math.floor(
             (Math.PI * Math.pow(waferDiameter / 2, 2)) / dieSize
         );
-        // 🎲 EXPANDED DEFECT LIBRARY - More chaos, more variety
+
         const defectTypes = [
-    "Edge Die Failure",
-    "Center Particle Contamination",
-    "Radial Pattern Defect",
-    "Random Defect Scatter",
-    "Cluster Failure",
-    "Scratch Pattern",
-    "Wafer Bow Distortion",
-    "Etch Non-Uniformity",
-    "Ion Implantation Drift",
-    "Lithography Misalignment",
-    "Chemical Vapor Deposition Defect",
-    "Metal Layer Delamination",
-    "Plasma Damage",
-    "Photoresist Residue",
-    "Micro-crack Propagation",
-    "Thermal Stress Fracture",
-    "Cross-Contamination",
-    "Incomplete Oxide Formation",
-    "Step Coverage Failure",
-    "Polysilicon Grain Boundaries"
-];
+            "Edge Die Failure",
+            "Center Particle Contamination",
+            "Radial Pattern Defect",
+            "Random Defect Scatter",
+            "Cluster Failure",
+            "Scratch Pattern",
+            "Wafer Bow Distortion",
+            "Etch Non-Uniformity",
+            "Ion Implantation Drift",
+            "Lithography Misalignment",
+            "Chemical Vapor Deposition Defect",
+            "Metal Layer Delamination",
+            "Plasma Damage",
+            "Photoresist Residue",
+            "Micro-crack Propagation",
+            "Thermal Stress Fracture",
+            "Cross-Contamination",
+            "Incomplete Oxide Formation",
+            "Step Coverage Failure",
+            "Polysilicon Grain Boundaries"
+        ];
 
-// 🎯 NOVEL DEFECT GENERATION: Mix single + hybrid patterns
-const randomValue = Math.random();
-let forcedDefect;
-let isHybrid = false;
+        // Pick defect type: 5% perfect, 30% hybrid (two combined), 65% single
+        const randomValue = Math.random();
+        let forcedDefect;
+        let isHybrid = false;
 
-if (randomValue < 0.05) {
-    // 5% Perfect Run
-    forcedDefect = "Perfect Run";
-} else if (randomValue < 0.35) {
-    // 30% HYBRID/MULTI-STAGE defects (NOVEL patterns!)
-    const primary = defectTypes[Math.floor(Math.random() * defectTypes.length)];
-    const secondary = defectTypes[Math.floor(Math.random() * defectTypes.length)];
-    forcedDefect = `${primary} + ${secondary}`;
-    isHybrid = true;
-} else {
-    // 65% Single defect type
-    forcedDefect = defectTypes[Math.floor(Math.random() * defectTypes.length)];
-}
-
+        if (randomValue < 0.05) {
+            forcedDefect = "Perfect Run";
+        } else if (randomValue < 0.35) {
+            const primary = defectTypes[Math.floor(Math.random() * defectTypes.length)];
+            const secondary = defectTypes[Math.floor(Math.random() * defectTypes.length)];
+            forcedDefect = `${primary} + ${secondary}`;
+            isHybrid = true;
+        } else {
+            forcedDefect = defectTypes[Math.floor(Math.random() * defectTypes.length)];
+        }
 
         const prompt = `You create realistic wafer manufacturing problems. Use SIMPLE, CLEAR language that beginners can understand.
 
@@ -60,7 +56,7 @@ WAFER INFO:
 - Total Chips: ~${totalDies}
 
 TODAY'S PROBLEM: ${forcedDefect}
-${isHybrid ? '⚠️ HYBRID DEFECT: This is a MULTI-STAGE or COMBINED failure. Create a scenario where BOTH defects occur (e.g., contamination happened first, then thermal stress, OR two simultaneous issues). Make the spatial pattern show BOTH signatures!' : ''}
+${isHybrid ? 'HYBRID DEFECT: This is a MULTI-STAGE or COMBINED failure. Create a scenario where BOTH defects occur (e.g., contamination happened first, then thermal stress, OR two simultaneous issues). Make the spatial pattern show BOTH signatures!' : ''}
 
 YOUR JOB:
 1. Create a UNIQUE, realistic version of this problem
@@ -117,80 +113,71 @@ Ensure total die count is realistic.
             }
 
             const data = await response.json();
-const defectData = data.result;
+            const defectData = data.result;
 
-// 🎲 TRULY RANDOM DISTRIBUTION ENGINE - No two runs are the same
+            // Override die distribution with our own randomized engine
+            // so results aren't dependent on LLM numeric accuracy
+            defectData.dieDistribution = generateDistribution(
+                totalDies,
+                defectData.severity,
+                defectData.defectType
+            );
 
-function generateDistribution(totalDies, severity, defectType) {
-  // Base failure rate with RANDOM VARIATION (±40%)
-  let baseFailureRate;
-
-  switch (severity) {
-    case "low":
-      baseFailureRate = 0.05 + (Math.random() * 0.04 - 0.02); // 3-7%
-      break;
-    case "moderate":
-      baseFailureRate = 0.12 + (Math.random() * 0.08 - 0.04); // 8-16%
-      break;
-    case "high":
-      baseFailureRate = 0.25 + (Math.random() * 0.15 - 0.075); // 17.5-32.5%
-      break;
-    case "critical":
-      baseFailureRate = 0.45 + (Math.random() * 0.20 - 0.10); // 35-55%
-      break;
-    default:
-      baseFailureRate = 0.10 + (Math.random() * 0.06 - 0.03); // 7-13%
-  }
-
-  // 🔥 SPECIAL CASES: Some defects are catastrophic
-  const catastrophicDefects = ["Wafer Bow Distortion", "Thermal Stress Fracture", "Chemical Vapor Deposition Defect"];
-  if (catastrophicDefects.includes(defectType)) {
-    baseFailureRate = Math.min(baseFailureRate * (1.5 + Math.random()), 0.85); // Up to 85% failure
-  }
-
-  // 🎲 Random clustering effect (some defects cause more concentrated failures)
-  const clusterMultiplier = 1 + (Math.random() * 0.4 - 0.2); // ±20% clustering variation
-  const failedDies = Math.floor(totalDies * baseFailureRate * clusterMultiplier);
-  const remainingDies = totalDies - failedDies;
-
-  // 🎯 Quality distribution with RANDOM VARIATION
-  const premiumRate = 0.5 + (Math.random() * 0.3 - 0.15); // 35-65%
-  const standardRate = 0.2 + (Math.random() * 0.2 - 0.1);  // 10-30%
-
-  const premium = Math.floor(remainingDies * premiumRate);
-  const standard = Math.floor(remainingDies * standardRate);
-  const economy = remainingDies - premium - standard;
-
-  // 🎲 Faulty vs Dead with random variation
-  const faultyRate = 0.6 + (Math.random() * 0.3 - 0.15); // 45-75% faulty (rest dead)
-  const faulty = Math.floor(failedDies * faultyRate);
-  const dead = failedDies - faulty;
-
-  return {
-    premium: Math.max(0, premium),
-    standard: Math.max(0, standard),
-    economy: Math.max(0, economy),
-    faulty: Math.max(0, faulty),
-    dead: Math.max(0, dead)
-  };
-}
-
-defectData.dieDistribution = generateDistribution(
-  totalDies,
-  defectData.severity,
-  defectData.defectType
-);
-
-return defectData;
-
-
-
+            return defectData;
 
         } catch (error) {
-            console.error("❌ AI MODEL 1 FAILED:", error);
+            console.error("AI Model 1 failed:", error);
             throw error;
         }
     }
 };
 
-console.log("🔴 AI Model 1 (OpenAI) Loaded");
+function generateDistribution(totalDies, severity, defectType) {
+    let baseFailureRate;
+
+    switch (severity) {
+        case "low":
+            baseFailureRate = 0.05 + (Math.random() * 0.04 - 0.02);
+            break;
+        case "moderate":
+            baseFailureRate = 0.12 + (Math.random() * 0.08 - 0.04);
+            break;
+        case "high":
+            baseFailureRate = 0.25 + (Math.random() * 0.15 - 0.075);
+            break;
+        case "critical":
+            baseFailureRate = 0.45 + (Math.random() * 0.20 - 0.10);
+            break;
+        default:
+            baseFailureRate = 0.10 + (Math.random() * 0.06 - 0.03);
+    }
+
+    // Catastrophic defects can push failure rates much higher
+    const catastrophicDefects = ["Wafer Bow Distortion", "Thermal Stress Fracture", "Chemical Vapor Deposition Defect"];
+    if (catastrophicDefects.includes(defectType)) {
+        baseFailureRate = Math.min(baseFailureRate * (1.5 + Math.random()), 0.85);
+    }
+
+    const clusterMultiplier = 1 + (Math.random() * 0.4 - 0.2);
+    const failedDies = Math.floor(totalDies * baseFailureRate * clusterMultiplier);
+    const remainingDies = totalDies - failedDies;
+
+    const premiumRate = 0.5 + (Math.random() * 0.3 - 0.15);
+    const standardRate = 0.2 + (Math.random() * 0.2 - 0.1);
+
+    const premium = Math.floor(remainingDies * premiumRate);
+    const standard = Math.floor(remainingDies * standardRate);
+    const economy = remainingDies - premium - standard;
+
+    const faultyRate = 0.6 + (Math.random() * 0.3 - 0.15);
+    const faulty = Math.floor(failedDies * faultyRate);
+    const dead = failedDies - faulty;
+
+    return {
+        premium: Math.max(0, premium),
+        standard: Math.max(0, standard),
+        economy: Math.max(0, economy),
+        faulty: Math.max(0, faulty),
+        dead: Math.max(0, dead)
+    };
+}

@@ -9,7 +9,7 @@ const TrainingData = {
         'Scratch Pattern': 80000,
         'No Defect (Perfect Run)': 100000
     },
-    
+
     getInfo() {
         return {
             total: this.totalScenarios,
@@ -17,5 +17,3 @@ const TrainingData = {
         };
     }
 };
-
-console.log(`🧠 Training Database: ${TrainingData.totalScenarios.toLocaleString()} scenarios`);
