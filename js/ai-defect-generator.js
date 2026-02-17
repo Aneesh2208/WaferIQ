@@ -1,6 +1,6 @@
 const DefectGeneratorAI = {
     async generateRealisticDefects(waferDiameter, dieSize, productionLine) {
-        console.log("AI Model 1: Generating defects...");
+        console.log("Defect Generator: Generating defects...");
 
         const totalDies = Math.floor(
             (Math.PI * Math.pow(waferDiameter / 2, 2)) / dieSize
@@ -126,7 +126,7 @@ Ensure total die count is realistic.
             return defectData;
 
         } catch (error) {
-            console.error("AI Model 1 failed:", error);
+            console.error("Defect Generator failed:", error);
             throw error;
         }
     }

@@ -1,6 +1,6 @@
 let mlModelReady = false;
 
-// Prevent browser from throttling background tabs during training
+// Silent audio context prevents browser from throttling background tabs during training
 function keepAlive() {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const oscillator = ctx.createOscillator();
@@ -41,10 +41,8 @@ async function runDualAIAnalysis() {
     const audio = keepAlive();
 
     try {
-        console.log('DUAL AI + ML ANALYSIS STARTING');
-
         loadingText.textContent = 'Training ML Model...';
-        loadingSubtext.textContent = 'Training on 50,000 real wafer patterns + 15 expert cases';
+        loadingSubtext.textContent = 'Training on 50,000 synthetic wafer patterns';
 
         if (!mlModelReady) {
             await MLPatternRecognition.trainModel();
@@ -52,14 +50,12 @@ async function runDualAIAnalysis() {
         }
         await sleep(500);
 
-        loadingText.textContent = 'AI Model 1: Generating Defects...';
-        loadingSubtext.textContent = 'AI simulating realistic manufacturing defects';
+        loadingText.textContent = 'Generating Defects...';
+        loadingSubtext.textContent = 'LLM simulating realistic manufacturing defects';
         await sleep(300);
 
         const defectData = await DefectGeneratorAI.generateRealisticDefects(
-            waferDiameter,
-            dieSize,
-            productionLine
+            waferDiameter, dieSize, productionLine
         );
 
         const totalDies = Object.values(defectData.dieDistribution).reduce((a, b) => a + b, 0);
@@ -68,52 +64,35 @@ async function runDualAIAnalysis() {
         loadingSubtext.textContent = 'Computing revenue, costs, and profit';
         await sleep(400);
 
-        const financials = FinancialCalculator.calculate(
-            defectData.dieDistribution,
-            waferDiameter
-        );
+        const financials = FinancialCalculator.calculate(defectData.dieDistribution, waferDiameter);
 
         loadingText.textContent = 'Rendering Wafer Map...';
         loadingSubtext.textContent = 'Drawing die-level visualization';
         await sleep(300);
 
-        WaferRenderer.renderWafer(
-            waferDiameter,
-            dieSize,
-            defectData.dieDistribution,
-            defectData.defectType
-        );
+        WaferRenderer.renderWafer(waferDiameter, dieSize, defectData.dieDistribution, defectData.defectType);
 
         loadingText.textContent = 'ML Pattern Recognition...';
-        loadingSubtext.textContent = 'Neural network analyzing pattern';
+        loadingSubtext.textContent = 'Neural network analyzing spatial pattern';
         await sleep(400);
 
-        const mlPrediction = await MLPatternRecognition.predictPattern(
-            defectData.dieDistribution,
-            waferDiameter,
-            dieSize
-        );
+        const spatialData = WaferRenderer.extractSpatialFeatures();
+        const mlPrediction = await MLPatternRecognition.predictFromSpatial(spatialData, waferDiameter, dieSize);
 
-        loadingText.textContent = 'AI Model 2: Analyzing Defects...';
-        loadingSubtext.textContent = 'AI diagnosing root causes';
+        loadingText.textContent = 'Analyzing Defects...';
+        loadingSubtext.textContent = 'LLM diagnosing root causes';
         await sleep(300);
 
         const waferData = { waferDiameter, dieSize, productionLine, totalDies };
-
-        const analysis = await DefectAnalyzerAI.analyzeDefects(
-            waferData,
-            defectData,
-            financials
-        );
+        const analysis = await DefectAnalyzerAI.analyzeDefects(waferData, defectData, financials);
 
         loadingText.textContent = 'Saving to Knowledge Base...';
         loadingSubtext.textContent = 'Building intelligence for future analyses';
         await sleep(200);
 
         const spatialFeatures = DefectAnalyzerAI.extractSpatialFeatures(defectData);
-        const caseId = WaferDatabase.save({
-            waferData,
-            defectData,
+        WaferDatabase.save({
+            waferData, defectData,
             dieDistribution: defectData.dieDistribution,
             spatialFeatures,
             aiDiagnosis: analysis.diagnosis,
@@ -126,19 +105,14 @@ async function runDualAIAnalysis() {
             financials
         });
 
-        console.log(`Case ${caseId} saved | Total: ${WaferDatabase.cases.length}`);
-
-        loadingText.textContent = 'Displaying Results...';
-        loadingSubtext.textContent = 'System is learning from this analysis!';
+        loadingText.textContent = 'Done';
+        loadingSubtext.textContent = 'Analysis complete';
         await sleep(300);
 
         FinancialCalculator.updateUI(financials);
         displayAnalysis(defectData, analysis, mlPrediction);
 
-        console.log('ANALYSIS COMPLETE');
-        console.log('AI Model 1:', defectData.defectType);
-        console.log('AI Model 2:', analysis.diagnosis);
-        console.log('ML Prediction:', mlPrediction.pattern, `(${mlPrediction.confidence})`);
+        console.log(`Result: ${defectData.defectType} | ML: ${mlPrediction.pattern} (${mlPrediction.confidence})`);
 
     } catch (error) {
         console.error('Analysis failed:', error);
@@ -158,11 +132,8 @@ function displayAnalysis(defectData, analysis, mlPrediction) {
     diagnosisBadge.textContent = defectData.defectType;
     diagnosisBadge.style.background = 'rgba(0,200,83,0.2)';
     diagnosisBadge.style.color = 'var(--success)';
-    diagnosisBadge.title = `${defectData.defectType}: ${defectData.description || 'Click "Defect Types" button for full explanation'}`;
+    diagnosisBadge.title = `${defectData.defectType}: ${defectData.description || 'See Defect Types for details'}`;
     diagnosisBadge.style.cursor = 'help';
-
-    document.getElementById('confidenceValue').textContent = `${analysis.confidence}%`;
-    document.getElementById('confidenceFill').style.width = `${analysis.confidence}%`;
 
     document.getElementById('rootCauseList').innerHTML =
         analysis.rootCauses.map(cause => `<li class="root-cause-item">${cause}</li>`).join('');
@@ -193,9 +164,9 @@ function displayAnalysis(defectData, analysis, mlPrediction) {
         ` : ''}
 
         <div class="analysis-section">
-            <h4 style="margin-bottom: 1rem; color: var(--text-secondary);">AI Model 1 (Defect Generator)</h4>
+            <h4 style="margin-bottom: 1rem; color: var(--text-secondary);">Defect Generator (LLM)</h4>
             <div class="analysis-content">
-                <strong>Generated Defect:</strong> ${defectData.defectType}<br>
+                <strong>Defect:</strong> ${defectData.defectType}<br>
                 <strong>Severity:</strong> ${defectData.severity}<br>
                 <strong>Region:</strong> ${defectData.region}<br>
                 <strong>Pattern:</strong> ${defectData.spatialPattern}
@@ -205,14 +176,17 @@ function displayAnalysis(defectData, analysis, mlPrediction) {
         <div class="analysis-section">
             <h4 style="margin-bottom: 1rem; color: var(--text-secondary);">ML Pattern Recognition</h4>
             <div class="analysis-content">
-                <strong>Predicted Pattern:</strong> ${mlPrediction.pattern}<br>
-                <strong>ML Confidence:</strong> ${mlPrediction.confidence}<br>
-                <strong>Model Status:</strong> Neural network trained on 50,000 samples
+                <strong>Predicted Pattern:</strong> ${mlPrediction.pattern} (${mlPrediction.confidence})<br>
+                ${mlPrediction.top3 ? `<div style="margin-top: 0.5rem;">
+                    ${mlPrediction.top3.map((p, i) => `<div style="display: flex; justify-content: space-between; padding: 0.25rem 0; ${i === 0 ? 'color: var(--accent); font-weight: 600;' : 'color: var(--text-secondary);'}">
+                        <span>${i + 1}. ${p.pattern}</span><span>${p.confidence}</span>
+                    </div>`).join('')}
+                </div>` : ''}
             </div>
         </div>
 
         <div class="analysis-section">
-            <h4 style="margin-bottom: 1rem; color: var(--text-secondary);">AI Model 2 (Defect Analyzer)</h4>
+            <h4 style="margin-bottom: 1rem; color: var(--text-secondary);">Defect Analyzer (LLM)</h4>
             <div class="analysis-content">${analysis.technicalAnalysis}</div>
         </div>
 
@@ -240,23 +214,18 @@ function sleep(ms) {
 document.getElementById('defectInfoBtn').addEventListener('click', () => {
     document.getElementById('defectInfoModal').classList.add('active');
 });
-
 document.getElementById('closeDefectInfo').addEventListener('click', () => {
     document.getElementById('defectInfoModal').classList.remove('active');
 });
-
 document.getElementById('defectInfoModal').addEventListener('click', (e) => {
-    if (e.target.id === 'defectInfoModal') {
-        document.getElementById('defectInfoModal').classList.remove('active');
-    }
+    if (e.target.id === 'defectInfoModal') e.target.classList.remove('active');
 });
 
 // Database export
 document.getElementById('exportDatabaseBtn').addEventListener('click', () => {
     WaferDatabase.export();
     const modal = document.getElementById('exportModal');
-    const body = document.getElementById('exportModalBody');
-    body.innerHTML = `
+    document.getElementById('exportModalBody').innerHTML = `
         <div class="stat-card" style="margin-bottom: 1.25rem;">
             <div class="stat-card-label">Export Complete</div>
             <div class="stat-card-value">${WaferDatabase.cases.length} cases</div>
@@ -274,7 +243,6 @@ document.getElementById('exportDatabaseBtn').addEventListener('click', () => {
     `;
     modal.classList.add('active');
 });
-
 document.getElementById('closeExportModal').addEventListener('click', () => {
     document.getElementById('exportModal').classList.remove('active');
 });
@@ -351,7 +319,6 @@ document.getElementById('databaseStatsBtn').addEventListener('click', () => {
 
     modal.classList.add('active');
 });
-
 document.getElementById('closeDbStats').addEventListener('click', () => {
     document.getElementById('dbStatsModal').classList.remove('active');
 });
@@ -363,7 +330,7 @@ document.getElementById('dbStatsModal').addEventListener('click', (e) => {
 window.addEventListener("load", () => {
     WaferRenderer.init();
 
-    // Popup hover handlers (JS-driven to survive tab switches)
+    // Hover popups for cost breakdown cards
     document.querySelectorAll('.metric-card').forEach(card => {
         const popup = card.querySelector('.cost-breakdown-popup');
         if (!popup) return;
@@ -375,6 +342,5 @@ window.addEventListener("load", () => {
         });
     });
 
-    console.log("WaferIQ loaded");
-    console.log(`Database: ${WaferDatabase.cases.length} cases`);
+    console.log(`WaferIQ loaded | Database: ${WaferDatabase.cases.length} cases`);
 });

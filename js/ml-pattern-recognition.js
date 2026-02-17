@@ -27,31 +27,25 @@ const MLPatternRecognition = {
     ],
 
     async initializeModel() {
-        console.log('Initializing ML model (128->64->21)...');
-
-        if (!window.tf) {
-            await this.loadTensorFlow();
-        }
+        if (!window.tf) await this.loadTensorFlow();
 
         this.model = tf.sequential({
             layers: [
                 tf.layers.dense({
                     units: 128,
                     activation: 'relu',
-                    inputShape: [36],
+                    inputShape: [32],
                     kernelRegularizer: tf.regularizers.l2({ l2: 0.001 })
                 }),
                 tf.layers.batchNormalization(),
                 tf.layers.dropout({ rate: 0.3 }),
-
                 tf.layers.dense({
                     units: 64,
                     activation: 'relu',
                     kernelRegularizer: tf.regularizers.l2({ l2: 0.001 })
                 }),
                 tf.layers.batchNormalization(),
-                tf.layers.dropout({ rate: 0.25 }),
-
+                tf.layers.dropout({ rate: 0.2 }),
                 tf.layers.dense({ units: 21, activation: 'softmax' })
             ]
         });
@@ -78,23 +72,130 @@ const MLPatternRecognition = {
         });
     },
 
+    // 32 features derived from die counts + spatial distribution
+    // Used identically in training and prediction to avoid mismatch
+    extractFeatures(spatial, waferDiameter, dieSize) {
+        const p = spatial.premium || 0;
+        const s = spatial.standard || 0;
+        const e = spatial.economy || 0;
+        const f = spatial.faulty || 0;
+        const d = spatial.dead || 0;
+        const total = p + s + e + f + d || 1;
+        const failures = f + d || 0.001;
+        const good = p + s || 0.001;
+
+        const rz = spatial.radialZones || [0, 0, 0, 0, 0];
+        const as = spatial.angularSectors || [0, 0, 0, 0, 0, 0, 0, 0];
+        const qu = spatial.quadrants || [0, 0, 0, 0];
+
+        return [
+            p / total, s / total, e / total, f / total, d / total,
+            (f + d) / total,
+            d / failures,
+            p / good,
+            (p + s) / total,
+            Math.abs(d - f) / total,
+            spatial.totalDefectRatio || 0,
+            rz[0], rz[1], rz[2], rz[3], rz[4],
+            as[0], as[1], as[2], as[3], as[4], as[5], as[6], as[7],
+            qu[0], qu[1], qu[2], qu[3],
+            spatial.leftRightAsymmetry || 0,
+            spatial.topBottomAsymmetry || 0,
+            waferDiameter / 450,
+            dieSize / 200
+        ];
+    },
+
+    // Simulate a wafer and extract spatial features for training
+    simulateAndExtract(waferDiameter, dieSize, defectType) {
+        const radius = waferDiameter / 2;
+        const dieWidth = Math.sqrt(dieSize);
+        const gridSize = Math.floor((waferDiameter * 0.9) / dieWidth);
+        const centerX = gridSize * dieWidth / 2;
+        const centerY = gridSize * dieWidth / 2;
+
+        let premium = 0, standard = 0, economy = 0, faulty = 0, dead = 0;
+        const radialZones = [0, 0, 0, 0, 0];
+        const angularSectors = [0, 0, 0, 0, 0, 0, 0, 0];
+        const quadrants = [0, 0, 0, 0];
+        let leftDefects = 0, rightDefects = 0, topDefects = 0, bottomDefects = 0;
+        let totalDies = 0, totalDefects = 0;
+
+        for (let row = 0; row < gridSize; row++) {
+            for (let col = 0; col < gridSize; col++) {
+                const cx = col * dieWidth + dieWidth / 2;
+                const cy = row * dieWidth + dieWidth / 2;
+                const dx = cx - centerX;
+                const dy = cy - centerY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance > radius) continue;
+
+                totalDies++;
+                const nd = distance / radius;
+                const angle = Math.atan2(dy, dx);
+
+                const prob = WaferRenderer.getDefectProbability(
+                    defectType, nd, angle, dx, dy,
+                    dieWidth, radius, cx, cy, centerX, centerY
+                );
+
+                if (Math.random() < prob) {
+                    const roll = Math.random();
+                    if (roll < 0.4) dead++;
+                    else if (roll < 0.7) faulty++;
+                    else economy++;
+
+                    totalDefects++;
+                    const zoneIdx = Math.min(Math.floor(nd * 5), 4);
+                    radialZones[zoneIdx]++;
+
+                    const normAngle = (angle + Math.PI) % (2 * Math.PI);
+                    const sectorIdx = Math.floor(normAngle / (Math.PI / 4)) % 8;
+                    angularSectors[sectorIdx]++;
+
+                    const quadIdx = (dx < 0 ? 0 : 1) + (dy < 0 ? 0 : 2);
+                    quadrants[quadIdx]++;
+
+                    if (dx < 0) leftDefects++; else rightDefects++;
+                    if (dy < 0) topDefects++; else bottomDefects++;
+                } else {
+                    const roll = Math.random();
+                    if (roll < 0.6) premium++;
+                    else if (roll < 0.85) standard++;
+                    else economy++;
+                }
+            }
+        }
+
+        const defectCount = totalDefects || 0.001;
+
+        return {
+            premium, standard, economy, faulty, dead,
+            totalDefectRatio: totalDefects / totalDies,
+            radialZones: radialZones.map(z => z / defectCount),
+            angularSectors: angularSectors.map(s => s / defectCount),
+            quadrants: quadrants.map(q => q / defectCount),
+            leftRightAsymmetry: totalDefects > 5 ? (rightDefects - leftDefects) / defectCount : 0,
+            topBottomAsymmetry: totalDefects > 5 ? (bottomDefects - topDefects) / defectCount : 0
+        };
+    },
+
     generateTrainingData(numSamples = 50000) {
         console.log(`Generating ${numSamples.toLocaleString()} training samples...`);
 
         const samplesPerPattern = Math.floor(numSamples / 21);
         const xs = [];
         const ys = [];
-        const startTime = Date.now();
 
         for (let patternIdx = 0; patternIdx < 21; patternIdx++) {
             const defectType = this.patternNames[patternIdx];
 
             for (let i = 0; i < samplesPerPattern; i++) {
-                const waferDiameter = [300, 450][Math.floor(Math.random() * 2)];
+                const waferDiameter = [200, 300, 450][Math.floor(Math.random() * 3)];
                 const dieSize = 25 + Math.random() * 175;
 
-                const dieDistribution = this.generateRealWaferData(waferDiameter, dieSize, defectType);
-                const features = this.extractAllFeatures(dieDistribution, waferDiameter, dieSize);
+                const spatial = this.simulateAndExtract(waferDiameter, dieSize, defectType);
+                const features = this.extractFeatures(spatial, waferDiameter, dieSize);
 
                 const label = new Array(21).fill(0);
                 label[patternIdx] = 1;
@@ -103,333 +204,21 @@ const MLPatternRecognition = {
                 ys.push(label);
             }
 
-            console.log(`  Pattern ${patternIdx + 1}/21: ${defectType}`);
-        }
-
-        const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
-        console.log(`Training data ready: ${xs.length} samples in ${totalTime}s`);
-
-        return {
-            xs: tf.tensor2d(xs),
-            ys: tf.tensor2d(ys)
-        };
-    },
-
-    generateRealWaferData(waferDiameter, dieSize, defectType) {
-        const radius = waferDiameter / 2;
-        const dieWidth = Math.sqrt(dieSize);
-        const gridSize = Math.floor((waferDiameter * 0.9) / dieWidth);
-        const centerX = gridSize * dieWidth / 2;
-        const centerY = gridSize * dieWidth / 2;
-
-        let premium = 0, standard = 0, economy = 0, faulty = 0, dead = 0;
-        const radialZones = [0, 0, 0, 0, 0];
-        const angularSectors = [0, 0, 0, 0, 0, 0, 0, 0];
-        const quadrants = [0, 0, 0, 0];
-        let leftDefects = 0, rightDefects = 0, topDefects = 0, bottomDefects = 0;
-        let totalDies = 0, totalDefects = 0;
-
-        for (let row = 0; row < gridSize; row++) {
-            for (let col = 0; col < gridSize; col++) {
-                const cellCenterX = col * dieWidth + dieWidth / 2;
-                const cellCenterY = row * dieWidth + dieWidth / 2;
-                const dx = cellCenterX - centerX;
-                const dy = cellCenterY - centerY;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-
-                if (distance > radius) continue;
-
-                totalDies++;
-                const normalizedDistance = distance / radius;
-                const angle = Math.atan2(dy, dx);
-
-                const defectProbability = this.getDefectProbability(
-                    defectType, normalizedDistance, angle, dx, dy,
-                    dieWidth, radius, cellCenterX, cellCenterY, centerX, centerY
-                );
-
-                if (Math.random() < defectProbability) {
-                    const severityRoll = Math.random();
-                    if (severityRoll < 0.4) dead++;
-                    else if (severityRoll < 0.7) faulty++;
-                    else economy++;
-
-                    totalDefects++;
-
-                    const zoneIdx = Math.min(Math.floor(normalizedDistance * 5), 4);
-                    radialZones[zoneIdx]++;
-
-                    const normalizedAngle = (angle + Math.PI) % (2 * Math.PI);
-                    const sectorIdx = Math.floor(normalizedAngle / (Math.PI / 4)) % 8;
-                    angularSectors[sectorIdx]++;
-
-                    const quadIdx = (dx < 0 ? 0 : 1) + (dy < 0 ? 0 : 2);
-                    quadrants[quadIdx]++;
-
-                    if (dx < 0) leftDefects++; else rightDefects++;
-                    if (dy < 0) topDefects++; else bottomDefects++;
-                } else {
-                    const qualityRoll = Math.random();
-                    if (qualityRoll < 0.6) premium++;
-                    else if (qualityRoll < 0.85) standard++;
-                    else economy++;
-                }
+            if ((patternIdx + 1) % 7 === 0) {
+                console.log(`  Generated ${patternIdx + 1}/21 patterns`);
             }
         }
 
-        const defectCount = totalDefects || 0.001;
-        return {
-            premium, standard, economy, faulty, dead,
-            radialZone0: radialZones[0] / defectCount,
-            radialZone1: radialZones[1] / defectCount,
-            radialZone2: radialZones[2] / defectCount,
-            radialZone3: radialZones[3] / defectCount,
-            radialZone4: radialZones[4] / defectCount,
-            sector0: angularSectors[0] / defectCount,
-            sector1: angularSectors[1] / defectCount,
-            sector2: angularSectors[2] / defectCount,
-            sector3: angularSectors[3] / defectCount,
-            sector4: angularSectors[4] / defectCount,
-            sector5: angularSectors[5] / defectCount,
-            sector6: angularSectors[6] / defectCount,
-            sector7: angularSectors[7] / defectCount,
-            quadNW: quadrants[0] / defectCount,
-            quadNE: quadrants[1] / defectCount,
-            quadSE: quadrants[2] / defectCount,
-            quadSW: quadrants[3] / defectCount,
-            leftRightAsymmetry: (rightDefects - leftDefects) / defectCount,
-            topBottomAsymmetry: (bottomDefects - topDefects) / defectCount
-        };
-    },
+        console.log(`Training data ready: ${xs.length} samples`);
 
-    getDefectProbability(defectType, normalizedDistance, angle, dx, dy,
-                         dieWidth, radius, cellCenterX, cellCenterY, centerX, centerY) {
-        switch(defectType) {
-            case "Scratch Pattern": {
-                const scratchBand = Math.abs(dx - dy);
-                return scratchBand < dieWidth * 2 ? 0.7 : 0.05;
-            }
-            case "Edge Die Failure":
-                return normalizedDistance > 0.8 ? 0.8 : 0.05;
-            case "Center Particle Contamination":
-                return normalizedDistance < 0.3 ? 0.75 : 0.05;
-            case "Radial Pattern Defect":
-                return Math.abs(Math.sin(angle * 4)) > 0.8 ? 0.7 : 0.05;
-            case "Cluster Failure": {
-                const clusterX = centerX + radius * 0.3;
-                const clusterY = centerY - radius * 0.2;
-                const clusterDist = Math.sqrt(
-                    Math.pow(cellCenterX - clusterX, 2) + Math.pow(cellCenterY - clusterY, 2)
-                );
-                return clusterDist < radius * 0.25 ? 0.8 : 0.05;
-            }
-            case "Random Defect Scatter":
-                return 0.20;
-            case "Wafer Bow Distortion":
-                return normalizedDistance > 0.7 ? 0.7 : normalizedDistance > 0.5 ? 0.3 : 0.05;
-            case "Etch Non-Uniformity": {
-                const ringPattern = Math.abs((normalizedDistance % 0.3) - 0.15);
-                return ringPattern < 0.05 ? 0.7 : 0.1;
-            }
-            case "Ion Implantation Drift": {
-                const gradientFactor = (dx + radius) / (2 * radius);
-                return gradientFactor > 0.6 ? 0.7 : gradientFactor > 0.4 ? 0.3 : 0.05;
-            }
-            case "Lithography Misalignment": {
-                const gridX = Math.abs(dx % (dieWidth * 4));
-                const gridY = Math.abs(dy % (dieWidth * 4));
-                return (gridX < dieWidth || gridY < dieWidth) ? 0.6 : 0.1;
-            }
-            case "Chemical Vapor Deposition Defect":
-                return normalizedDistance < 0.4 ? 0.8 : normalizedDistance < 0.6 ? 0.4 : 0.1;
-            case "Metal Layer Delamination": {
-                const spiralFactor = Math.abs(Math.sin(angle * 3 + normalizedDistance * 5));
-                return spiralFactor > 0.7 ? 0.7 : 0.1;
-            }
-            case "Plasma Damage":
-                return (Math.abs(Math.sin(angle * 6)) > 0.6 && normalizedDistance > 0.5) ? 0.8 : 0.1;
-            case "Photoresist Residue": {
-                const clusterPattern = Math.sin(dx * 0.1) * Math.cos(dy * 0.1);
-                return clusterPattern > 0.5 ? 0.6 : 0.1;
-            }
-            case "Micro-crack Propagation": {
-                const crackLine1 = Math.abs(dx * 0.8 - dy);
-                const crackLine2 = Math.abs(dx * 0.8 + dy);
-                return (crackLine1 < dieWidth * 3 || crackLine2 < dieWidth * 3) ? 0.7 : 0.08;
-            }
-            case "Thermal Stress Fracture":
-                return 0.5 + (Math.random() * 0.3);
-            case "Cross-Contamination":
-                return 0.25;
-            case "Incomplete Oxide Formation": {
-                const patchX = Math.floor(cellCenterX / (dieWidth * 5)) % 2;
-                const patchY = Math.floor(cellCenterY / (dieWidth * 5)) % 2;
-                return (patchX === patchY) ? 0.6 : 0.08;
-            }
-            case "Step Coverage Failure":
-                return (normalizedDistance > 0.7 || Math.abs(Math.sin(angle * 8)) > 0.8) ? 0.7 : 0.1;
-            case "Polysilicon Grain Boundaries":
-                return 0.18;
-            case "Perfect Run":
-                return 0.02;
-            default:
-                return 0.15;
-        }
-    },
-
-    // Duplicate of getDefectProbability kept for simulateDefectPattern compatibility
-    // (used by extractAllFeatures during prediction on live data)
-    simulateDefectPattern(defectType, waferDiameter, dieSize) {
-        const radius = waferDiameter / 2;
-        const dieWidth = Math.sqrt(dieSize);
-        const gridSize = Math.floor((waferDiameter * 0.9) / dieWidth);
-        const centerX = gridSize * dieWidth / 2;
-        const centerY = gridSize * dieWidth / 2;
-
-        let premium = 0, standard = 0, economy = 0, faulty = 0, dead = 0;
-        const radialZones = [0, 0, 0, 0, 0];
-        const angularSectors = [0, 0, 0, 0, 0, 0, 0, 0];
-        const quadrants = [0, 0, 0, 0];
-        let leftDefects = 0, rightDefects = 0, topDefects = 0, bottomDefects = 0;
-        let totalDies = 0, totalDefects = 0;
-
-        for (let row = 0; row < gridSize; row++) {
-            for (let col = 0; col < gridSize; col++) {
-                const cellCenterX = col * dieWidth + dieWidth / 2;
-                const cellCenterY = row * dieWidth + dieWidth / 2;
-                const dx = cellCenterX - centerX;
-                const dy = cellCenterY - centerY;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-
-                if (distance > radius) continue;
-
-                totalDies++;
-                const normalizedDistance = distance / radius;
-                const angle = Math.atan2(dy, dx);
-
-                const defectProbability = this.getDefectProbability(
-                    defectType, normalizedDistance, angle, dx, dy,
-                    dieWidth, radius, cellCenterX, cellCenterY, centerX, centerY
-                );
-
-                if (Math.random() < defectProbability) {
-                    const severityRoll = Math.random();
-                    if (severityRoll < 0.4) dead++;
-                    else if (severityRoll < 0.7) faulty++;
-                    else economy++;
-
-                    totalDefects++;
-
-                    const zoneIdx = Math.min(Math.floor(normalizedDistance * 5), 4);
-                    radialZones[zoneIdx]++;
-
-                    const normalizedAngle = (angle + Math.PI) % (2 * Math.PI);
-                    const sectorIdx = Math.floor(normalizedAngle / (Math.PI / 4)) % 8;
-                    angularSectors[sectorIdx]++;
-
-                    const quadIdx = (dx < 0 ? 0 : 1) + (dy < 0 ? 0 : 2);
-                    quadrants[quadIdx]++;
-
-                    if (dx < 0) leftDefects++; else rightDefects++;
-                    if (dy < 0) topDefects++; else bottomDefects++;
-                } else {
-                    const qualityRoll = Math.random();
-                    if (qualityRoll < 0.6) premium++;
-                    else if (qualityRoll < 0.85) standard++;
-                    else economy++;
-                }
-            }
+        // Shuffle so the validation split gets all 21 patterns evenly
+        for (let i = xs.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [xs[i], xs[j]] = [xs[j], xs[i]];
+            [ys[i], ys[j]] = [ys[j], ys[i]];
         }
 
-        const totalDiesNorm = totalDies || 1;
-        const totalDefectsNorm = totalDefects || 0.001;
-
-        return {
-            premium, standard, economy, faulty, dead,
-            totalDefectRatio: totalDefects / totalDiesNorm,
-            radialZone0: radialZones[0] / totalDiesNorm,
-            radialZone1: radialZones[1] / totalDiesNorm,
-            radialZone2: radialZones[2] / totalDiesNorm,
-            radialZone3: radialZones[3] / totalDiesNorm,
-            radialZone4: radialZones[4] / totalDiesNorm,
-            sector0: angularSectors[0] / totalDiesNorm,
-            sector1: angularSectors[1] / totalDiesNorm,
-            sector2: angularSectors[2] / totalDiesNorm,
-            sector3: angularSectors[3] / totalDiesNorm,
-            sector4: angularSectors[4] / totalDiesNorm,
-            sector5: angularSectors[5] / totalDiesNorm,
-            sector6: angularSectors[6] / totalDiesNorm,
-            sector7: angularSectors[7] / totalDiesNorm,
-            quadNW: quadrants[0] / totalDiesNorm,
-            quadNE: quadrants[1] / totalDiesNorm,
-            quadSW: quadrants[2] / totalDiesNorm,
-            quadSE: quadrants[3] / totalDiesNorm,
-            leftRightAsymmetry: totalDefects > 10 ? (rightDefects - leftDefects) / totalDefectsNorm : 0,
-            topBottomAsymmetry: totalDefects > 10 ? (bottomDefects - topDefects) / totalDefectsNorm : 0
-        };
-    },
-
-    extractAllFeatures(dieDistribution, waferDiameter, dieSize) {
-        const total = dieDistribution.premium + dieDistribution.standard +
-                     dieDistribution.economy + dieDistribution.faulty + dieDistribution.dead;
-
-        return [
-            // Defect density (scaled for better learning)
-            (dieDistribution.totalDefectRatio || 0) * 10,
-
-            // 5 radial zones (scaled)
-            (dieDistribution.radialZone0 || 0) * 10,
-            (dieDistribution.radialZone1 || 0) * 10,
-            (dieDistribution.radialZone2 || 0) * 10,
-            (dieDistribution.radialZone3 || 0) * 10,
-            (dieDistribution.radialZone4 || 0) * 10,
-
-            // 8 angular sectors
-            dieDistribution.sector0 || 0,
-            dieDistribution.sector1 || 0,
-            dieDistribution.sector2 || 0,
-            dieDistribution.sector3 || 0,
-            dieDistribution.sector4 || 0,
-            dieDistribution.sector5 || 0,
-            dieDistribution.sector6 || 0,
-            dieDistribution.sector7 || 0,
-
-            // 4 quadrants
-            dieDistribution.quadNW || 0,
-            dieDistribution.quadNE || 0,
-            dieDistribution.quadSE || 0,
-            dieDistribution.quadSW || 0,
-
-            // Asymmetry
-            dieDistribution.leftRightAsymmetry || 0,
-            dieDistribution.topBottomAsymmetry || 0,
-
-            // Die quality ratios
-            dieDistribution.premium / total,
-            dieDistribution.standard / total,
-            dieDistribution.economy / total,
-            dieDistribution.faulty / total,
-            dieDistribution.dead / total,
-
-            // Severity indicators
-            (dieDistribution.faulty + dieDistribution.dead) / total,
-            dieDistribution.dead / (dieDistribution.faulty + dieDistribution.dead + 0.001),
-            (dieDistribution.faulty + dieDistribution.dead) > total * 0.5 ? 1 : 0,
-
-            // Quality distribution
-            (dieDistribution.premium + dieDistribution.standard) / total,
-            dieDistribution.premium / (dieDistribution.premium + dieDistribution.standard + 0.001),
-            Math.abs(dieDistribution.dead - dieDistribution.faulty) / total,
-
-            // Pattern flags
-            dieDistribution.dead / total > 0.3 ? 1 : 0,
-            dieDistribution.premium / total > 0.7 ? 1 : 0,
-            (dieDistribution.faulty + dieDistribution.dead) / total < 0.1 ? 1 : 0,
-
-            // Wafer context
-            waferDiameter / 450,
-            dieSize / 200
-        ];
+        return { xs: tf.tensor2d(xs), ys: tf.tensor2d(ys) };
     },
 
     async trainModel() {
@@ -439,30 +228,30 @@ const MLPatternRecognition = {
         }
 
         console.log('Training ML model...');
+        if (!this.model) await this.initializeModel();
 
-        if (!this.model) {
-            await this.initializeModel();
-        }
+        // Use setTimeout instead of requestAnimationFrame so training runs in background tabs
+        const origRAF = window.requestAnimationFrame;
+        window.requestAnimationFrame = cb => setTimeout(cb, 0);
 
         const { xs, ys } = this.generateTrainingData();
+        const loadingSub = document.getElementById('loadingSubtext');
 
         await this.model.fit(xs, ys, {
-            epochs: 20,
-            batchSize: 256,
+            epochs: 60,
+            batchSize: 512,
             validationSplit: 0.2,
             shuffle: true,
             verbose: 0,
             callbacks: {
                 onEpochEnd: (epoch, logs) => {
-                    const trainAcc = (logs.acc * 100).toFixed(2);
-                    const valAcc = (logs.val_acc * 100).toFixed(2);
-
-                    console.log(`Epoch ${String(epoch + 1).padStart(3)}/100: ` +
-                               `loss=${logs.loss.toFixed(4)}, ` +
-                               `acc=${trainAcc}%, ` +
-                               `val_acc=${valAcc}%`);
-
-                    if (epoch > 20 && logs.val_acc > 0.75) {
+                    const trainAcc = logs.acc ?? logs.accuracy ?? 0;
+                    const valAcc = logs.val_acc ?? logs.val_accuracy ?? 0;
+                    console.log(`Epoch ${epoch + 1}/60: loss=${logs.loss.toFixed(4)}, train=${(trainAcc * 100).toFixed(1)}%, val=${(valAcc * 100).toFixed(1)}%`);
+                    if (loadingSub) {
+                        loadingSub.textContent = `Epoch ${epoch + 1}/60 — train: ${(trainAcc * 100).toFixed(1)}% | val: ${(valAcc * 100).toFixed(1)}%`;
+                    }
+                    if (epoch > 40 && valAcc > 0.92) {
                         console.log('Target accuracy reached, stopping early');
                         this.model.stopTraining = true;
                     }
@@ -470,6 +259,7 @@ const MLPatternRecognition = {
             }
         });
 
+        window.requestAnimationFrame = origRAF;
         this.trained = true;
         console.log('ML training complete');
 
@@ -477,31 +267,29 @@ const MLPatternRecognition = {
         ys.dispose();
     },
 
-    async predictPattern(dieDistribution, waferDiameter, dieSize) {
-        if (!this.trained) {
-            await this.trainModel();
-        }
+    async predictFromSpatial(spatialData, waferDiameter, dieSize) {
+        if (!this.trained) await this.trainModel();
 
-        const features = this.extractAllFeatures(dieDistribution, waferDiameter, dieSize);
+        const features = this.extractFeatures(spatialData, waferDiameter, dieSize);
         const input = tf.tensor2d([features]);
         const prediction = this.model.predict(input);
-        const probabilities = await prediction.data();
+        const probs = await prediction.data();
 
-        const maxProb = Math.max(...probabilities);
-        const predictedIndex = probabilities.indexOf(maxProb);
-        const confidence = (maxProb * 100).toFixed(1) + '%';
+        const indexed = Array.from(probs).map((p, i) => ({ prob: p, idx: i }));
+        indexed.sort((a, b) => b.prob - a.prob);
+
+        const top = indexed[0];
 
         input.dispose();
         prediction.dispose();
 
         return {
-            pattern: this.patternNames[predictedIndex],
-            confidence: confidence,
-            probabilities: Object.fromEntries(
-                this.patternNames.map((name, i) =>
-                    [name, (probabilities[i] * 100).toFixed(2) + '%']
-                )
-            )
+            pattern: this.patternNames[top.idx],
+            confidence: (top.prob * 100).toFixed(1) + '%',
+            top3: indexed.slice(0, 3).map(x => ({
+                pattern: this.patternNames[x.idx],
+                confidence: (x.prob * 100).toFixed(1) + '%'
+            }))
         };
     }
 };

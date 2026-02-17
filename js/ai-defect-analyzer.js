@@ -1,6 +1,6 @@
 const DefectAnalyzerAI = {
     async analyzeDefects(waferData, defectData, financials) {
-        console.log("AI Model 2: Analyzing defects...");
+        console.log("Defect Analyzer: Analyzing defects...");
 
         const spatialFeatures = this.extractSpatialFeatures(defectData);
         const similarCases = WaferDatabase.findSimilar(spatialFeatures, 5);
@@ -189,7 +189,7 @@ Ensure total die count is realistic.
             return data.result;
 
         } catch (error) {
-            console.error("AI Model 2 failed:", error);
+            console.error("Defect Analyzer failed:", error);
             throw error;
         }
     },

@@ -1,6 +1,7 @@
 const WaferRenderer = {
     canvas: null,
     ctx: null,
+    lastDieGrid: [],
 
     init() {
         this.canvas = document.getElementById('waferCanvas');
@@ -23,8 +24,7 @@ const WaferRenderer = {
         this.ctx.stroke();
     },
 
-   renderWafer(waferDiameter, dieSize, dieDistribution, defectType)
- {
+    renderWafer(waferDiameter, dieSize, dieDistribution, defectType) {
         const scale = this.canvas.width / (waferDiameter * 1.1);
         const centerX = this.canvas.width / 2;
         const centerY = this.canvas.height / 2;
@@ -32,7 +32,6 @@ const WaferRenderer = {
 
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Draw wafer circle
         this.ctx.fillStyle = '#1a2332';
         this.ctx.beginPath();
         this.ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
@@ -43,219 +42,189 @@ const WaferRenderer = {
         this.ctx.stroke();
 
         const dieWidth = Math.sqrt(dieSize) * scale;
-
         const gridWidth = waferDiameter * scale;
         const diesPerRow = Math.floor(gridWidth / dieWidth);
-        const diesPerCol = diesPerRow; // symmetric grid
+        const diesPerCol = diesPerRow;
 
         const offsetX = centerX - (diesPerRow * dieWidth) / 2;
         const offsetY = centerY - (diesPerCol * dieWidth) / 2;
 
-        const dieStatuses = this.createDieStatusArray(dieDistribution);
-        let statusIndex = 0;
+        const colors = {
+            premium: '#00ff88',
+            standard: '#66d9a6',
+            economy: '#ffaa00',
+            faulty: '#ff4444',
+            dead: '#aa0000'
+        };
+
+        this.lastDieGrid = [];
 
         for (let row = 0; row < diesPerCol; row++) {
             for (let col = 0; col < diesPerRow; col++) {
-
                 const x = offsetX + col * dieWidth;
                 const y = offsetY + row * dieWidth;
-
                 const cellCenterX = x + dieWidth / 2;
                 const cellCenterY = y + dieWidth / 2;
-
                 const dx = cellCenterX - centerX;
                 const dy = cellCenterY - centerY;
-
                 const distFromCenter = Math.sqrt(dx * dx + dy * dy);
 
-                if (distFromCenter <= radius - dieWidth / 2) {
+                if (distFromCenter > radius - dieWidth / 2) continue;
 
-                    // 🎨 Enhanced color scheme for better visibility
-                    const colors = {
-                        premium: '#00ff88',    // Bright green - perfect
-                        standard: '#66d9a6',   // Light green - good
-                        economy: '#ffaa00',    // Orange - marginal
-                        faulty: '#ff4444',     // Red - defective but salvageable
-                        dead: '#aa0000'        // Dark red - completely failed
-                    };
+                const normalizedDistance = distFromCenter / radius;
+                const angle = Math.atan2(dy, dx);
 
-                    // 🎨 SMART STATUS ASSIGNMENT - Uses actual die distribution
-                    let status = 'premium';
+                const defectProbability = this.getDefectProbability(
+                    defectType, normalizedDistance, angle, dx, dy,
+                    dieWidth, radius, cellCenterX, cellCenterY, centerX, centerY
+                );
 
-const normalizedDistance = distFromCenter / radius;
-const angle = Math.atan2(dy, dx);
-let defectProbability = 0;
-
-// 🔥 COMPLETE DEFECT VISUALIZATION LIBRARY
-switch (defectType) {
-    // ═══ ORIGINAL DEFECTS ═══
-    case "Scratch Pattern":
-        const scratchBand = Math.abs(dx - dy);
-        defectProbability = scratchBand < dieWidth * 2 ? 0.7 : 0.05;
-        break;
-
-    case "Edge Die Failure":
-        defectProbability = normalizedDistance > 0.8 ? 0.8 : 0.05;
-        break;
-
-    case "Center Particle Contamination":
-        defectProbability = normalizedDistance < 0.3 ? 0.75 : 0.05;
-        break;
-
-    case "Radial Pattern Defect":
-        defectProbability = Math.abs(Math.sin(angle * 4)) > 0.8 ? 0.7 : 0.05;
-        break;
-
-    case "Cluster Failure":
-        const clusterX = centerX + radius * 0.3;
-        const clusterY = centerY - radius * 0.2;
-        const clusterDist = Math.sqrt(
-            Math.pow(cellCenterX - clusterX, 2) + Math.pow(cellCenterY - clusterY, 2)
-        );
-        defectProbability = clusterDist < radius * 0.25 ? 0.8 : 0.05;
-        break;
-
-    case "Random Defect Scatter":
-        defectProbability = 0.20; // Increased for visibility
-        break;
-
-    // ═══ NEW DEFECTS ═══
-    case "Wafer Bow Distortion":
-        // Edge warping - affects outer rings
-        defectProbability = normalizedDistance > 0.7 ? 0.7 : normalizedDistance > 0.5 ? 0.3 : 0.05;
-        break;
-
-    case "Etch Non-Uniformity":
-        // Concentric ring pattern
-        const ringPattern = Math.abs((normalizedDistance % 0.3) - 0.15);
-        defectProbability = ringPattern < 0.05 ? 0.7 : 0.1;
-        break;
-
-    case "Ion Implantation Drift":
-        // Gradient from one side to another
-        const gradientFactor = (dx + radius) / (2 * radius);
-        defectProbability = gradientFactor > 0.6 ? 0.7 : gradientFactor > 0.4 ? 0.3 : 0.05;
-        break;
-
-    case "Lithography Misalignment":
-        // Grid-like pattern defects
-        const gridX = Math.abs(dx % (dieWidth * 4));
-        const gridY = Math.abs(dy % (dieWidth * 4));
-        defectProbability = (gridX < dieWidth || gridY < dieWidth) ? 0.6 : 0.1;
-        break;
-
-    case "Chemical Vapor Deposition Defect":
-        // Center concentration
-        defectProbability = normalizedDistance < 0.4 ? 0.8 : normalizedDistance < 0.6 ? 0.4 : 0.1;
-        break;
-
-    case "Metal Layer Delamination":
-        // Spiral pattern
-        const spiralFactor = Math.abs(Math.sin(angle * 3 + normalizedDistance * 5));
-        defectProbability = spiralFactor > 0.7 ? 0.7 : 0.1;
-        break;
-
-    case "Plasma Damage":
-        // Asymmetric radial damage
-        defectProbability = (Math.abs(Math.sin(angle * 6)) > 0.6 && normalizedDistance > 0.5) ? 0.8 : 0.1;
-        break;
-
-    case "Photoresist Residue":
-        // Random clusters
-        const clusterPattern = Math.sin(dx * 0.1) * Math.cos(dy * 0.1);
-        defectProbability = clusterPattern > 0.5 ? 0.6 : 0.1;
-        break;
-
-    case "Micro-crack Propagation":
-        // Linear fracture lines
-        const crackLine1 = Math.abs(dx * 0.8 - dy);
-        const crackLine2 = Math.abs(dx * 0.8 + dy);
-        defectProbability = (crackLine1 < dieWidth * 3 || crackLine2 < dieWidth * 3) ? 0.7 : 0.08;
-        break;
-
-    case "Thermal Stress Fracture":
-        // Catastrophic - widespread damage from center
-        defectProbability = 0.5 + (Math.random() * 0.3); // High random failure
-        break;
-
-    case "Cross-Contamination":
-        // Scattered random defects
-        defectProbability = 0.25;
-        break;
-
-    case "Incomplete Oxide Formation":
-        // Patchy pattern
-        const patchX = Math.floor(cellCenterX / (dieWidth * 5)) % 2;
-        const patchY = Math.floor(cellCenterY / (dieWidth * 5)) % 2;
-        defectProbability = (patchX === patchY) ? 0.6 : 0.08;
-        break;
-
-    case "Step Coverage Failure":
-        // Edge-heavy with radial component
-        defectProbability = (normalizedDistance > 0.7 || Math.abs(Math.sin(angle * 8)) > 0.8) ? 0.7 : 0.1;
-        break;
-
-    case "Polysilicon Grain Boundaries":
-        // Fine-grained random defects
-        defectProbability = 0.18;
-        break;
-
-    case "Perfect Run":
-        defectProbability = 0.02; // Almost none
-        break;
-
-    default:
-        // Fallback for any unknown defect type
-        defectProbability = 0.15;
-        break;
-}
-
-// 🎲 Apply defect probability with quality degradation
-if (Math.random() < defectProbability) {
-    // Defected die - decide severity
-    const severityRoll = Math.random();
-    if (severityRoll < 0.4) {
-        status = 'dead'; // 40% dead
-    } else if (severityRoll < 0.7) {
-        status = 'faulty'; // 30% faulty
-    } else {
-        status = 'economy'; // 30% economy (marginal)
-    }
-} else {
-    // Good die - assign quality tier
-    const qualityRoll = Math.random();
-    if (qualityRoll < 0.6) {
-        status = 'premium';
-    } else if (qualityRoll < 0.85) {
-        status = 'standard';
-    } else {
-        status = 'economy';
-    }
-}
-
-
-                    this.ctx.fillStyle = colors[status];
-                    this.ctx.fillRect(x, y, dieWidth * 0.95, dieWidth * 0.95);
-
-                    this.ctx.strokeStyle = '#0a0e1a';
-                    this.ctx.lineWidth = 1;
-                    this.ctx.strokeRect(x, y, dieWidth * 0.95, dieWidth * 0.95);
+                let status;
+                if (Math.random() < defectProbability) {
+                    const roll = Math.random();
+                    if (roll < 0.4) status = 'dead';
+                    else if (roll < 0.7) status = 'faulty';
+                    else status = 'economy';
+                } else {
+                    const roll = Math.random();
+                    if (roll < 0.6) status = 'premium';
+                    else if (roll < 0.85) status = 'standard';
+                    else status = 'economy';
                 }
+
+                this.lastDieGrid.push({ normalizedDistance, angle, dx, dy, status });
+
+                this.ctx.fillStyle = colors[status];
+                this.ctx.fillRect(x, y, dieWidth * 0.95, dieWidth * 0.95);
+                this.ctx.strokeStyle = '#0a0e1a';
+                this.ctx.lineWidth = 1;
+                this.ctx.strokeRect(x, y, dieWidth * 0.95, dieWidth * 0.95);
             }
         }
     },
 
-    createDieStatusArray(distribution) {
-        const statuses = [];
+    // Shared defect probability engine used by both the renderer and ML training
+    getDefectProbability(defectType, nd, angle, dx, dy,
+                         dieWidth, radius, cx, cy, centerX, centerY) {
+        switch (defectType) {
+            case "Scratch Pattern": {
+                const band = Math.abs(dx - dy);
+                return band < dieWidth * 2 ? 0.7 : 0.05;
+            }
+            case "Edge Die Failure":
+                return nd > 0.8 ? 0.8 : 0.05;
+            case "Center Particle Contamination":
+                return nd < 0.3 ? 0.75 : 0.05;
+            case "Radial Pattern Defect":
+                return Math.abs(Math.sin(angle * 4)) > 0.8 ? 0.7 : 0.05;
+            case "Cluster Failure": {
+                const clX = centerX + radius * 0.3;
+                const clY = centerY - radius * 0.2;
+                const clDist = Math.sqrt((cx - clX) ** 2 + (cy - clY) ** 2);
+                return clDist < radius * 0.25 ? 0.8 : 0.05;
+            }
+            case "Random Defect Scatter":
+                return 0.20;
+            case "Wafer Bow Distortion":
+                return nd > 0.7 ? 0.7 : nd > 0.5 ? 0.3 : 0.05;
+            case "Etch Non-Uniformity": {
+                const ring = Math.abs((nd % 0.3) - 0.15);
+                return ring < 0.05 ? 0.7 : 0.1;
+            }
+            case "Ion Implantation Drift": {
+                const grad = (dx + radius) / (2 * radius);
+                return grad > 0.6 ? 0.7 : grad > 0.4 ? 0.3 : 0.05;
+            }
+            case "Lithography Misalignment": {
+                const gx = Math.abs(dx % (dieWidth * 4));
+                const gy = Math.abs(dy % (dieWidth * 4));
+                return (gx < dieWidth || gy < dieWidth) ? 0.6 : 0.1;
+            }
+            case "Chemical Vapor Deposition Defect":
+                return nd < 0.4 ? 0.8 : nd < 0.6 ? 0.4 : 0.1;
+            case "Metal Layer Delamination": {
+                const spiral = Math.abs(Math.sin(angle * 3 + nd * 5));
+                return spiral > 0.7 ? 0.7 : 0.1;
+            }
+            case "Plasma Damage":
+                return (Math.abs(Math.sin(angle * 6)) > 0.6 && nd > 0.5) ? 0.8 : 0.1;
+            case "Photoresist Residue": {
+                const cluster = Math.sin(dx * 0.1) * Math.cos(dy * 0.1);
+                return cluster > 0.5 ? 0.6 : 0.1;
+            }
+            case "Micro-crack Propagation": {
+                const c1 = Math.abs(dx * 0.8 - dy);
+                const c2 = Math.abs(dx * 0.8 + dy);
+                return (c1 < dieWidth * 3 || c2 < dieWidth * 3) ? 0.7 : 0.08;
+            }
+            case "Thermal Stress Fracture":
+                return 0.5 + (Math.random() * 0.3);
+            case "Cross-Contamination":
+                return 0.25;
+            case "Incomplete Oxide Formation": {
+                const px = Math.floor(cx / (dieWidth * 5)) % 2;
+                const py = Math.floor(cy / (dieWidth * 5)) % 2;
+                return (px === py) ? 0.6 : 0.08;
+            }
+            case "Step Coverage Failure":
+                return (nd > 0.7 || Math.abs(Math.sin(angle * 8)) > 0.8) ? 0.7 : 0.1;
+            case "Polysilicon Grain Boundaries":
+                return 0.18;
+            case "Perfect Run":
+                return 0.02;
+            default:
+                return 0.15;
+        }
+    },
 
-        for (let i = 0; i < distribution.premium; i++) statuses.push('premium');
-        for (let i = 0; i < distribution.standard; i++) statuses.push('standard');
-        for (let i = 0; i < distribution.economy; i++) statuses.push('economy');
-        for (let i = 0; i < distribution.faulty; i++) statuses.push('faulty');
-        for (let i = 0; i < distribution.dead; i++) statuses.push('dead');
+    extractSpatialFeatures() {
+        const grid = this.lastDieGrid;
+        if (!grid.length) return null;
 
-        return statuses;
+        const total = grid.length;
+        const radialZones = [0, 0, 0, 0, 0];
+        const angularSectors = [0, 0, 0, 0, 0, 0, 0, 0];
+        const quadrants = [0, 0, 0, 0];
+        let leftDefects = 0, rightDefects = 0, topDefects = 0, bottomDefects = 0;
+        let totalDefects = 0;
+        let premium = 0, standard = 0, economy = 0, faulty = 0, dead = 0;
+
+        for (const die of grid) {
+            const isDefect = die.status === 'faulty' || die.status === 'dead';
+
+            if (die.status === 'premium') premium++;
+            else if (die.status === 'standard') standard++;
+            else if (die.status === 'economy') economy++;
+            else if (die.status === 'faulty') faulty++;
+            else if (die.status === 'dead') dead++;
+
+            if (isDefect) {
+                totalDefects++;
+                const zoneIdx = Math.min(Math.floor(die.normalizedDistance * 5), 4);
+                radialZones[zoneIdx]++;
+
+                const normAngle = (die.angle + Math.PI) % (2 * Math.PI);
+                const sectorIdx = Math.floor(normAngle / (Math.PI / 4)) % 8;
+                angularSectors[sectorIdx]++;
+
+                const quadIdx = (die.dx < 0 ? 0 : 1) + (die.dy < 0 ? 0 : 2);
+                quadrants[quadIdx]++;
+
+                if (die.dx < 0) leftDefects++; else rightDefects++;
+                if (die.dy < 0) topDefects++; else bottomDefects++;
+            }
+        }
+
+        const defectCount = totalDefects || 0.001;
+
+        return {
+            premium, standard, economy, faulty, dead,
+            totalDefectRatio: totalDefects / total,
+            radialZones: radialZones.map(z => z / defectCount),
+            angularSectors: angularSectors.map(s => s / defectCount),
+            quadrants: quadrants.map(q => q / defectCount),
+            leftRightAsymmetry: totalDefects > 5 ? (rightDefects - leftDefects) / defectCount : 0,
+            topBottomAsymmetry: totalDefects > 5 ? (bottomDefects - topDefects) / defectCount : 0
+        };
     }
 };
-
-console.log('🎨 Wafer Renderer Loaded');
